@@ -26,6 +26,8 @@ Function Install-Git {
     #Penginstallan Git menggunakan Chocolatey
     try {
         Start-Process powershell.exe -Verb RunAs -ArgumentList "-command choco install git.install --yes | Out-Host" -WindowStyle Normal
+        Start-Sleep -s 20
+        Wait-Process choco -Timeout 240 -ErrorAction SilentlyContinue
     }
     catch [System.InvalidOperationException] {
         Write-Warning "Klik Yes di User Access Control untuk Menginstall"
@@ -42,4 +44,4 @@ Function Install-Git {
 if (Get-Command -Name git -ErrorAction Ignore) {
     Write-Output "Git sudah terinstall"
 } else {Install-Git}
-
+Clear-Host
