@@ -2,19 +2,19 @@
 # Cek Koneksi Internet
 #=====================
 
-$net = (Test-Connection www.google.com -Count 1 -Quiet)
-If ($net -ne "True") {
+# Cek Koneksi ke www.google.com
+If (-Not (Test-Connection www.google.com -Count 1 -Quiet)) {
     Write-Host "Tidak dapat terkoneksi ke internet, Cek koneksi internet anda."
-    Start-Sleep -Seconds 5
+    Start-Sleep -s 5
     exit
 }
 
-#===================
-# Fungsi install Git
-#===================
+#=============================
+# Mengecek dan menginstall Git
+#=============================
 
-Function Install-Git {
-    #Pengecekan chocolatey sudah terinstall
+Function Install-choco {
+    #Pengecekan Chocolatey sudah terinstall
     if ((Get-Command -Name choco -ErrorAction Ignore) -and ($chocoVersion = (Get-Item "$env:ChocolateyInstall\choco.exe" -ErrorAction Ignore).VersionInfo.ProductVersion)) {
         Write-Output "Chocolatey Versi $chocoVersion sudah terinstall"
     } else {
@@ -22,26 +22,23 @@ Function Install-Git {
         Set-ExecutionPolicy Bypass -Scope Process -Force; Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
         powershell choco feature enable -n allowGlobalConfirmation
     }
-    
+}
+
+Function Install-git {
     #Penginstallan Git menggunakan Chocolatey
     try {
         Start-Process powershell.exe -Verb RunAs -ArgumentList "-command choco install git.install --yes | Out-Host" -WindowStyle Normal
-        Start-Sleep -s 20
+        Start-Sleep -s 10
         Wait-Process choco -Timeout 240 -ErrorAction SilentlyContinue
-    }
-    catch [System.InvalidOperationException] {
+    } catch [System.InvalidOperationException] {
         Write-Warning "Klik Yes di User Access Control untuk Menginstall"
-    }
-    catch {
+    } catch {
         Write-Error $_.Exception
     }
 }
 
-#==============================
 # Cek jika git sudah terinstall
-#==============================
-
-if (Get-Command -Name git -ErrorAction Ignore) {
-    Write-Output "Git sudah terinstall"
-} else {Install-Git}
-Clear-Host
+if (-Not (Get-Command -Name git -ErrorAction Ignore)) {
+    Install-choco
+    Install-git
+}
