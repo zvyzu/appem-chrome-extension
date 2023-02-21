@@ -27,6 +27,7 @@ Function Install-choco {
 Function Install-git {
     #Penginstallan Git menggunakan Chocolatey
     try {
+        # Nama package official Git adalah "git.install" bukan "git"
         Start-Process powershell.exe -Verb RunAs -ArgumentList "-command choco install git.install --yes | Out-Host" -WindowStyle Normal
         Start-Sleep -s 10
         Wait-Process choco -Timeout 240 -ErrorAction SilentlyContinue
