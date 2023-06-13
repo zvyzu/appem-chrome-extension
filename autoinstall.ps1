@@ -79,19 +79,12 @@ else {
 # Melakukan git clone / git pull
 #===============================
 
-Function Start-Download_configjs {
-    # write-Host 'Mengunduh config.js'
-    # URL config.js
-    # $url_configjs = "https://raw.githubusercontent.com/evanvyz/sipd-chrome-extension-autoinstall/main/config.js"
-    # Mendownload config.js
-    # Start-Download -url $url_configjs -pathname "$drive\$sipd\config.js"
-}
-
 Function Start-Git_Clone_Sipd {
     # Mengecek folder sudah ada
     if (Test-Path "$drive\$sipd") {
         Remove-Item -LiteralPath "$drive\$sipd" -Force -Recurse
     }
+
     # Melakukan git clone
     try {
         Start-Process powershell.exe -Verb RunAs -ArgumentList "-command git clone https://github.com/agusnurwanto/sipd-chrome-extension.git $drive\$sipd | Out-Host" -WindowStyle Normal
@@ -101,6 +94,12 @@ Function Start-Git_Clone_Sipd {
     catch {
         Write-Error $_.Exception
         Start-Sleep -Seconds 10
+    }
+
+    if (Test-Path "$drive\$sipd") {
+        Start-Process powershell.exe -ArgumentList "-command git clone https://github.com/agusnurwanto/sipd-chrome-extension.git $drive\$sipd | Out-Host" -WindowStyle Normal
+        Start-Sleep -s 1
+        Wait-Process git -Timeout 120 -ErrorAction SilentlyContinue
     }
 }
 
