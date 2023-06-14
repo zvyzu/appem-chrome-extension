@@ -30,6 +30,11 @@ if (-Not (Test-Connection www.google.com -Count 1 -Quiet)) {
     Start-Sleep -Seconds 5
     exit
 }
+else {
+    if (-Not (Test-Connection github.com -Count 1 -Quiet)) {
+        Write-Host 'Tidak dapat terkoneksi ke github.com!'
+    }
+}
 
 #=============================
 # Mengecek dan menginstall Git
@@ -87,8 +92,8 @@ Function Start-Git_Clone_Sipd {
 
     # Melakukan git clone
     try {
-        Start-Process powershell.exe -Verb RunAs -ArgumentList "-command git clone https://github.com/agusnurwanto/sipd-chrome-extension.git $drive\$sipd | Out-Host" -WindowStyle Normal
-        Start-Sleep -s 1
+        Start-Process powershell.exe -ArgumentList "-command git clone https://github.com/agusnurwanto/sipd-chrome-extension.git $drive\$sipd | Out-Host" -WindowStyle Normal
+        Start-Sleep -s 3
         Wait-Process git -Timeout 120 -ErrorAction SilentlyContinue
     }
     catch {
@@ -96,18 +101,14 @@ Function Start-Git_Clone_Sipd {
         Start-Sleep -Seconds 10
     }
 
-    if (Test-Path "$drive\$sipd") {
-        Start-Process powershell.exe -ArgumentList "-command git clone https://github.com/agusnurwanto/sipd-chrome-extension.git $drive\$sipd | Out-Host" -WindowStyle Normal
-        Start-Sleep -s 1
-        Wait-Process git -Timeout 120 -ErrorAction SilentlyContinue
-    }
+    Start-Sleep -s 2
+    Start-Process powershell.exe -ArgumentList "-command git config --global --add safe.directory '*' | Out-Host" -WindowStyle Normal
 }
 
 Function Start-Git_Pull_Sipd {
     # Melakukan git pull
     try {
         Write-Host ' '
-        # git config --global --add safe.directory $drive\$sipd
         git -C $drive\$sipd pull origin master
         Start-Sleep -s 5
         Wait-Process git -Timeout 60 -ErrorAction SilentlyContinue
