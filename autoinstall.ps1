@@ -21,7 +21,7 @@ else {
 #=====================
 
 # Cek Koneksi ke www.google.com
-if (-Not (Test-Connection www.google.com -Count 1 -Quiet)) {
+if (-Not(Test-Connection www.google.com -Count 1 -Quiet)) {
     Clear-Host
     Write-Host ' '
     Write-Host 'Tidak dapat terkoneksi ke internet!'
@@ -31,7 +31,7 @@ if (-Not (Test-Connection www.google.com -Count 1 -Quiet)) {
     exit
 }
 else {
-    if (-Not (Test-Connection github.com -Count 1 -Quiet)) {
+    if (-Not(Test-Connection github.com -Count 1 -Quiet)) {
         Write-Host 'Tidak dapat terkoneksi ke github.com!'
     }
 }
@@ -179,6 +179,7 @@ Function Install-Chrome {
 }
 
 Function Open-Sipd {
+    # Mengecek Proses Google Chrome sedang berjalan dan menutupnya
     $chrome = Get-Process chrome -ErrorAction SilentlyContinue
     if ($chrome) {
         Clear-Host
@@ -204,6 +205,15 @@ Function Open-Sipd {
         }
     }
 
+    if (Test-Path "$drive\$sipd\config.js") {
+        # Mengambil url sipd dari config.js
+        $get_url_configjs = Get-Content "$drive\$sipd\config.js" | Select-String -Pattern '\.sipd\.kemendagri\.go\.id' | Out-String
+        $url_daerah_sipd = $get_url_configjs.Trim().Trim('sipd_url : "').Trim('// alamat sipd sesuai kabupaten kota masing-masing').Trim(',"')
+    }
+    else {
+        $url_daerah_sipd = 'https://sipd.kemendagri.go.id'
+    }
+
     Clear-Host
     Write-Host ' '
     Write-Host 'Ketik "y" dan tekan Enter untuk membuka SIPD.'
@@ -212,7 +222,7 @@ Function Open-Sipd {
     if ($confirm -eq "y") {
         try {
             # Membuka SIPD dengan chrome extension sipd-chrome-extension (Bersifat tidak permanen / hilang jika ditutup)
-            Start-Process chrome.exe -ArgumentList "--load-extension=$drive\$sipd", "https://madiunkab.sipd.kemendagri.go.id/daerah"
+            Start-Process chrome.exe -ArgumentList "--load-extension=$drive\$sipd", "$url_daerah_sipd"
         }
         catch {
             Write-Host ' '
@@ -421,7 +431,6 @@ Function Start-Menu {
     until ($pilihan -eq 0)
 }
 
-
 #===================
 # 10. Edit config.js
 #===================
@@ -581,7 +590,7 @@ Tahun Anggaran:
             '73' {$i = 'gunungkidulkab'}
             '74' {$i = 'kulon progokab'}
             '75' {$i = 'slemankab'}
-            '76' {$i = 'yogyakarta'}
+            '76' {$i = 'jogjakota'}
             '77' {$i = 'jatimprov'}
             '78' {$i = 'bangkalankab'}
             '79' {$i = 'banyuwangikab'}
@@ -737,8 +746,8 @@ Tahun Anggaran:
             '239' {$i = 'prabumulih'}
             '240' {$i = 'banyuasinkab'}
             '241' {$i = 'oganilirkab'}
-            '242' {$i = 'ogankomeringulutimurkab'}
-            '243' {$i = 'ogankomeringuluselatankab'}
+            '242' {$i = 'okutimurkab'}
+            '243' {$i = 'okuselatankab'}
             '244' {$i = 'empatlawangkab'}
             '246' {$i = 'lampungprov'}
             '247' {$i = 'lampungbaratkab'}
@@ -803,7 +812,7 @@ Tahun Anggaran:
             '309' {$i = 'kutaikartanegarakab'}
             '310' {$i = 'kutaibaratkab'}
             '311' {$i = 'kutaitimurkab'}
-            '312' {$i = 'paserkab'}
+            '312' {$i = 'pasirkab'}
             '313' {$i = 'balikpapan'}
             '314' {$i = 'bontang'}
             '315' {$i = 'samarinda'}
@@ -811,16 +820,16 @@ Tahun Anggaran:
             '318' {$i = 'sulutprov'}
             '319' {$i = 'bolaangmongondowkab'}
             '320' {$i = 'minahasakab'}
-            '321' {$i = 'kepulauansangihekab'}
+            '321' {$i = 'sangihekab'}
             '322' {$i = 'bitung'}
             '323' {$i = 'manado'}
             '324' {$i = 'kepulauantalaudkab'}
             '325' {$i = 'minahasaselatankab'}
             '326' {$i = 'tomohon'}
             '327' {$i = 'minahasautarakab'}
-            '328' {$i = 'kotamobagu'}
+            '328' {$i = 'kotamubagu'}
             '329' {$i = 'bolaangmongondowutarakab'}
-            '330' {$i = 'kep.siautagulandangbiarokab'}
+            '330' {$i = 'kepsiautagulandangbiarokab'}
             '331' {$i = 'minahasatenggarakab'}
             '332' {$i = 'bolaangmongondowtimurkab'}
             '333' {$i = 'bolaangmongondowselatankab'}
@@ -828,13 +837,13 @@ Tahun Anggaran:
             '335' {$i = 'banggaikab'}
             '336' {$i = 'banggaikepulauankab'}
             '337' {$i = 'buolkab'}
-            '338' {$i = 'tolitolikab'}
+            '338' {$i = 'toli-tolikab'}
             '339' {$i = 'donggalakab'}
             '340' {$i = 'morowalikab'}
             '341' {$i = 'posokab'}
             '342' {$i = 'palu'}
             '343' {$i = 'parigimoutongkab'}
-            '344' {$i = 'tojounaunakab'}
+            '344' {$i = 'tojouna-unakab'}
             '345' {$i = 'sigikab'}
             '346' {$i = 'sulselprov'}
             '347' {$i = 'bantaengkab'}
@@ -856,7 +865,7 @@ Tahun Anggaran:
             '363' {$i = 'takalarkab'}
             '364' {$i = 'tanatorajakab'}
             '365' {$i = 'wajokab'}
-            '366' {$i = 'parepare'}
+            '366' {$i = 'pare-pare'}
             '367' {$i = 'makassar'}
             '368' {$i = 'palopo'}
             '369' {$i = 'luwutimurkab'}
@@ -867,7 +876,7 @@ Tahun Anggaran:
             '374' {$i = 'kolakakab'}
             '375' {$i = 'munakab'}
             '376' {$i = 'kendari'}
-            '377' {$i = 'baubau'}
+            '377' {$i = 'bau-bau'}
             '378' {$i = 'konaweselatankab'}
             '379' {$i = 'bombanakab'}
             '380' {$i = 'wakatobikab'}
@@ -947,7 +956,7 @@ Tahun Anggaran:
             '475' {$i = 'bengkulu'}
             '476' {$i = 'kaurkab'}
             '477' {$i = 'selumakab'}
-            '478' {$i = 'mukomukokab'}
+            '478' {$i = 'muko-mukokab'}
             '479' {$i = 'lebongkab'}
             '480' {$i = 'kepahiangkab'}
             '481' {$i = 'bengkulutengahkab'}
@@ -960,7 +969,7 @@ Tahun Anggaran:
             '488' {$i = 'kepulauansulakab'}
             '489' {$i = 'halmaheraselatankab'}
             '490' {$i = 'halmaherautarakab'}
-            '491' {$i = 'pulaumorotaikab'}
+            '491' {$i = 'morotaikab'}
             '492' {$i = 'bantenprov'}
             '493' {$i = 'lebakkab'}
             '494' {$i = 'pandeglangkab'}
@@ -995,7 +1004,7 @@ Tahun Anggaran:
             '527' {$i = 'kepulauananambaskab'}
             '528' {$i = 'papuabaratprov'}
             '530' {$i = 'manokwarikab'}
-            '531' {$i = 'fakfakkab'}
+            '531' {$i = 'fak-fakkab'}
             '535' {$i = 'telukbintunikab'}
             '536' {$i = 'telukwondamakab'}
             '537' {$i = 'kaimanakab'}
