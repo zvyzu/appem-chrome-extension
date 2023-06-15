@@ -80,11 +80,31 @@ else {
     choco outdated
 }
 
-#===============================
-# Melakukan git clone / git pull
-#===============================
+#==================================
+#  Melakukan git clone / git pull
+#==================================
 
-Function Start-Git_Clone_Sipd {
+function Edit-gitconfig {
+    # Memperbaiki masalah git safe.directory
+
+    if (Test-Path "D:\" ) {
+        $tmpdrive = "D:"
+    }
+    else {
+        $tmpdrive = "$env:SystemDrive"
+    }
+
+    $git_safedir = Get-Content $env:USERPROFILE\.gitconfig | Select-String -Pattern "$tmpdrive/$folder/$sipd"
+    if ($null -eq $git_safedir -or $git_safedir -eq '') {
+        $gitconfig = @"
+    directory = $tmpdrive/$folder/$sipd
+"@
+        $gitconfig | Out-File -Encoding utf8 -LiteralPath "$env:USERPROFILE\.gitconfig" -Append -Force
+        Start-Sleep -Seconds 2
+    }
+}
+
+function Start-Git_Clone_Sipd {
     # Mengecek folder sudah ada
     if (Test-Path "$drive\$sipd") {
         Remove-Item -LiteralPath "$drive\$sipd" -Force -Recurse
@@ -102,12 +122,20 @@ Function Start-Git_Clone_Sipd {
     }
 
     Start-Sleep -s 2
-    Start-Process powershell.exe -ArgumentList "-command git config --global --add safe.directory '*' | Out-Host" -WindowStyle Normal
+    Edit-gitconfig
+
+    # Mengecek config.js
+    if (-Not(Test-Path "$drive\$sipd\config.js")) {
+        Edit-configjs
+    }
 }
 
 Function Start-Git_Pull_Sipd {
+    Edit-gitconfig
+
     # Melakukan git pull
     try {
+        # Rencana perbaikan git safe.directory dengan file $env:USERPROFILE\.gitconfig
         Write-Host ' '
         git -C $drive\$sipd pull origin master
         Start-Sleep -s 5
@@ -208,10 +236,16 @@ Function Open-Sipd {
     if (Test-Path "$drive\$sipd\config.js") {
         # Mengambil url sipd dari config.js
         $get_url_configjs = Get-Content "$drive\$sipd\config.js" | Select-String -Pattern '\.sipd\.kemendagri\.go\.id' | Out-String
-        $url_daerah_sipd = $get_url_configjs.Trim().Trim('sipd_url : "').Trim('// alamat sipd sesuai kabupaten kota masing-masing').Trim(',"')
+
+        if ($get_url_configjs -ne '' -or $null -ne $get_url_configjs) {
+            $url_daerah_sipd = $get_url_configjs.Trim().Trim('sipd_url : "').Trim('// alamat sipd sesuai kabupaten kota masing-masing').Trim(',"')
+        }
+        else {
+            Edit-configjs
+        }
     }
     else {
-        $url_daerah_sipd = 'https://sipd.kemendagri.go.id'
+        Edit-configjs
     }
 
     Clear-Host
@@ -432,7 +466,7 @@ Function Start-Menu {
 }
 
 #===================
-# 10. Edit config.js
+#  Edit config.js
 #===================
 
 Function Edit-configjs {
@@ -460,7 +494,7 @@ Tahun Anggaran:
         Write-Host ' '
         Write-Host "Tahun Anggaran: $tahun_anggaran"
         Write-Host "ID Daerah: $id_daerah"
-        write-Host "URL SIPD: https://$sipd_url.sipd.kemendagri.go.id/"
+        write-Host "URL SIPD: https://$i.sipd.kemendagri.go.id/"
         Write-Host ' '
         Write-Host "Menyimpan ke $drive\$sipd\config.js"
         Start-Sleep -s 5
@@ -1071,15 +1105,13 @@ Tahun Anggaran:
     }
     until ($null -ne $i)
 
-    $sipd_url = $i
-
     Show-id_url
 
     $configjs = @"
 var config = {
 	tahun_anggaran : "$tahun_anggaran", // Tahun anggaran
 	id_daerah : "$id_daerah", // ID daerah bisa didapat dengan ketikan kode drakor di console log SIPD Merah atau cek value dari pilihan pemda di halaman login SIPD Biru
-	sipd_url : "https://$sipd_url.sipd.kemendagri.go.id/", // alamat sipd sesuai kabupaten kota masing-masing
+	sipd_url : "https://$i.sipd.kemendagri.go.id/", // alamat sipd sesuai kabupaten kota masing-masing
 	jml_rincian : 500, // maksimal jumlah rincian yang dikirim ke server lokal dalam satu request
 	realisasi : false, // get realisasi rekening
 	url_server_lokal : "https://xxxxxxxxxxxxxxx/wp-admin/admin-ajax.php", // url server lokal
