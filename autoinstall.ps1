@@ -85,7 +85,7 @@ else {
 #==================================
 
 function Edit-gitconfig {
-    # Memperbaiki masalah git safe.directory
+    # Memperbaiki masalah git unsafe.directory
 
     if (Test-Path "D:\" ) {
         $tmpdrive = "D:"
@@ -135,7 +135,6 @@ Function Start-Git_Pull_Sipd {
 
     # Melakukan git pull
     try {
-        # Rencana perbaikan git safe.directory dengan file $env:USERPROFILE\.gitconfig
         Write-Host ' '
         git -C $drive\$sipd pull origin master
         Start-Sleep -s 5
@@ -167,7 +166,9 @@ if (Test-Path "$drive\$sipd") {
     foreach ($file in $files) {
         if (-Not(Test-Path "$drive\$sipd\$file")) {
             Write-Host ' '
-            Write-Warning 'File / folder tidak lengkap, Menghapus folder sipd-chrome-extension.'
+            Write-Host "File / folder di dalam $sipd tidak lengkap!"
+            Write-Host ' '
+            Write-Host "Menghapus folder $sipd..."
             Remove-Item -Path "$drive\$sipd" -Force -Recurse
             Write-Host ' '
             Write-Host 'Menjalankan git clone...'
@@ -187,7 +188,7 @@ else {
 
 Function Install-Chrome {
     Write-Host ' '
-    Write-Host 'Ketik "y" lalu tekan Enter untuk menginstall Google Chrome.'
+    Write-Host 'Ketik "y" lalu tekan Enter untuk menginstall Google Chrome'
     Write-Host ' '
     $confirm = Read-Host "Download dan install Google Chrome?"
     if ($confirm -eq "y") {
@@ -267,39 +268,39 @@ Function Open-Sipd {
     }
 }
 
-#==============================================
-#  Menu git pull ulang sipd-chrome-extension.
-#==============================================
+#=============================================
+#  Menu git pull ulang sipd-chrome-extension
+#=============================================
 
 Function Confirm-git_pull {
     Clear-Host
     Write-Host ' '
-    Write-Host 'Ketik "y" dan tekan Enter untuk git pull ulang sipd-chrome-extension.'
+    Write-Host "Ketik y dan tekan Enter untuk git pull ulang $sipd."
     Write-Host ' '
-    $confirm = Read-Host "git pull ulang sipd-chrome-extension?"
-    if ($confirm -eq "y") {
+    $confirm = Read-Host "git pull ulang $sipd?"
+    if ($confirm -eq 'y') {
         Start-Git_Pull_Sipd
     }
 }
 
-#===========================================
-#  Menu Clone ulang sipd-chrome-extension.
-#===========================================
+#==========================================
+#  Menu Clone ulang sipd-chrome-extension
+#==========================================
 
 Function Confirm-git_clone {
     Clear-Host
     Write-Host ' '
-    Write-Host 'Ketik "y" dan tekan Enter untuk git clone ulang sipd-chrome-extension.'
+    Write-Host "Ketik y dan tekan Enter untuk git clone ulang $sipd."
     Write-Host ' '
-    $confirm = Read-Host "git clone ulang sipd-chrome-extension?"
-    if ($confirm -eq "y") {
+    $confirm = Read-Host "git clone ulang $sipd?"
+    if ($confirm -eq 'y') {
         Start-Git_Clone_Sipd
     }
 }
 
-#=============================
-#  Menu update aplikasi Git.
-#=============================
+#============================
+#  Menu update aplikasi Git
+#============================
 
 Function Confirm-update_git {
     Clear-Host
@@ -323,9 +324,9 @@ Function Confirm-update_git {
     }
 }
 
-#====================================
-#  Menu Install ulang aplikasi Git.
-#====================================
+#===================================
+#  Menu Install ulang aplikasi Git
+#===================================
 
 Function Confirm-reinstall_git {
     Clear-Host
@@ -350,9 +351,9 @@ Function Confirm-reinstall_git {
     }
 }
 
-#============================================
-#  Menu Download dan install Google Chrome.
-#============================================
+#===========================================
+#  Menu Download dan install Google Chrome
+#===========================================
 
 Function Confirm-chrome {
     Clear-Host
@@ -372,9 +373,9 @@ Function Confirm-chrome {
     }
 }
 
-#====================================
-#  Menu Update aplikasi Chocolatey.
-#====================================
+#===================================
+#  Menu Update aplikasi Chocolatey
+#===================================
 
 Function Confirm-update_chocolatey {
     Clear-Host
@@ -404,16 +405,16 @@ Function Confirm-update_chocolatey {
 Function Open-about_sipd_chrome_extension {
     Clear-Host
     Write-Host ' '
-    Write-Host 'Ketik "y" dan tekan Enter untuk tentang sipd-chrome-extension.'
+    Write-Host "Ketik y dan tekan Enter untuk tentang $sipd."
     Write-Host ' '
-    $confirm = Read-Host "Buka Tentang sipd-chrome-extension?"
+    $confirm = Read-Host "Buka Tentang $sipd?"
     if ($confirm -eq "y") {
         try {
             Start-Process chrome.exe -ArgumentList "--load-extension=$drive\$sipd", "https://github.com/agusnurwanto/sipd-chrome-extension#readme"
         }
         catch {
             Write-Host ' '
-            Write-Warning "Google Chrome Belum terinstall."
+            Write-Warning 'Google Chrome Belum terinstall!'
             Write-Host ' '
             Install-Chrome
         }
@@ -460,9 +461,10 @@ Function Start-Menu {
         '7'  {Confirm-update_chocolatey}
         '8'  {Open-about_sipd_chrome_extension}
         '9'  {Edit-configjs}
+        '0'  {Exit}
         }
     }
-    until ($pilihan -eq 0)
+    until ($pilihan -eq '0')
 }
 
 #===================
@@ -503,50 +505,27 @@ Tahun Anggaran:
     # melakukan tindakan sesuai input user
     do {
         Clear-Host
+        # if (-Not(Test-Path "$drive\$sipd\config.js")) {Write-Host ''}
         Write-Host ' '
         Write-Host $list_tahun
         $pilih_th = Read-Host "Pilih Tahun Anggaran"
         switch ($pilih_th) {
-            '1' {
-                $tahun_anggaran = "2021"
-                $pilih_th = '0'
-            }
-            '2' {
-                $tahun_anggaran = "2022"
-                $pilih_th = '0'
-            }
-            '3' {
-                $tahun_anggaran = "2023"
-                $pilih_th = '0'
-            }
-            '4' {
-                $tahun_anggaran = "2024"
-                $pilih_th = '0'
-            }
-            '5' {
-                $tahun_anggaran = "2025"
-                $pilih_th = '0'
-            }
-            '6' {
-                $tahun_anggaran = "2026"
-                $pilih_th = '0'
-            }
-            '7' {
-                $tahun_anggaran = "2027"
-                $pilih_th = '0'
-            }
-            '8' {
-                $tahun_anggaran = "2028"
-                $pilih_th = '0'
-            }
+            '1' {$tahun_anggaran = "2021"}
+            '2' {$tahun_anggaran = "2022"}
+            '3' {$tahun_anggaran = "2023"}
+            '4' {$tahun_anggaran = "2024"}
+            '5' {$tahun_anggaran = "2025"}
+            '6' {$tahun_anggaran = "2026"}
+            '7' {$tahun_anggaran = "2027"}
+            '8' {$tahun_anggaran = "2028"}
             '9' {
                 Write-Host ' '
                 $tahun_anggaran = Read-Host "Tahun Anggaran"
-                $pilih_th = '0'
             }
+            '0' {Start-Menu}
         }
     }
-    until ($pilih_th -eq '0')
+    until ($null -ne $tahun_anggaran)
 
     do {
         Clear-Host
