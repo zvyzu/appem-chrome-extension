@@ -20,8 +20,7 @@ else {
 # Cek Koneksi Internet
 #=====================
 
-function Get-Koneksi {
-    # Cek Koneksi ke www.google.com
+function Start-ping {
     if (-Not(Test-Connection www.google.com -Count 1 -Quiet)) {
         Clear-Host
         Write-Host ' '
@@ -48,7 +47,7 @@ function Install-choco {
         Write-Output "Chocolatey Versi $chocoVersion sudah terinstall"
     }
     else {
-        Get-Koneksi
+        Start-ping
         Write-Output "Menginstall Chocolatey"
         Set-ExecutionPolicy Bypass -Scope Process -Force; Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
         powershell choco feature enable -n allowGlobalConfirmation
@@ -56,7 +55,8 @@ function Install-choco {
 }
 
 function Install-git {
-    Get-Koneksi
+    Start-ping
+
     # Penginstallan Git menggunakan Chocolatey
     try {
         # Nama package official Git adalah "git.install" bukan "git"
@@ -81,16 +81,14 @@ if (-Not(Get-Command -Name git -ErrorAction Ignore)) {
 else {
     Clear-Host
     Write-Host ' '
-    # choco outdated
+    choco outdated
 }
 
 #==================================
 #  Melakukan git clone / git pull
 #==================================
 
-function Edit-gitconfig {
-    # Memperbaiki masalah git unsafe.directory
-
+function Edit-gitconfig { # Memperbaiki masalah git unsafe.directory
     if (Test-Path "D:\" ) {
         $tmpdrive = "D:"
     }
@@ -109,7 +107,7 @@ function Edit-gitconfig {
 }
 
 function Start-Git_Clone_Sipd {
-    Get-Koneksi
+    Start-ping
 
     # Mengecek folder sudah ada
     if (Test-Path "$drive\$sipd") {
@@ -129,20 +127,16 @@ function Start-Git_Clone_Sipd {
 
     Start-Sleep -s 2
     Edit-gitconfig
-
-    # Mengecek config.js
-    if (-Not(Test-Path "$drive\$sipd\config.js")) {
-        Edit-configjs
-    }
+    Test-configjs
 }
 
-Function Start-Git_Pull_Sipd {
+function Start-Git_Pull_Sipd {
     Edit-gitconfig
-    Get-Koneksi
 
     # Melakukan git pull
     try {
         Write-Host ' '
+        Write-Host 'Menjalankan git pull :'
         git -C $drive\$sipd pull origin master
         Start-Sleep -s 5
         Wait-Process git -Timeout 60 -ErrorAction SilentlyContinue
@@ -150,6 +144,15 @@ Function Start-Git_Pull_Sipd {
     catch {
         Write-Error $_.Exception
         Start-Sleep -Seconds 10
+    }
+
+    Test-configjs
+}
+
+function Test-configjs {
+    # Mengecek config.js
+    if (-Not(Test-Path "$drive\$sipd\config.js")) {
+        Edit-configjs
     }
 }
 
@@ -193,13 +196,13 @@ else {
 #  Menu Buka SIPD / Install Google Chrome
 #==========================================
 
-Function Install-Chrome {
+function Install-Chrome {
     Write-Host ' '
     Write-Host 'Ketik "y" lalu tekan Enter untuk menginstall Google Chrome'
     Write-Host ' '
     $confirm = Read-Host "Download dan install Google Chrome?"
     if ($confirm -eq "y") {
-        Get-Koneksi
+        Start-ping
         try {
             # Perlu di ingat choco install googlechrome akan menginstall tidak peduli chrome sudah terinstall
             Start-Process powershell.exe -Verb RunAs -ArgumentList "-command choco install googlechrome --yes | Out-Host" -WindowStyle Normal
@@ -213,10 +216,11 @@ Function Install-Chrome {
             Write-Error $_.Exception
         }
     }
-    Open-Sipd
 }
 
-Function Open-Sipd {
+function Open-Sipd {
+    Test-configjs
+
     # Mengecek Proses Google Chrome sedang berjalan dan menutupnya
     $chrome = Get-Process chrome -ErrorAction SilentlyContinue
     if ($chrome) {
@@ -275,14 +279,13 @@ Function Open-Sipd {
             Install-Chrome
         }
     }
-    Start-Menu
 }
 
 #=============================================
 #  Menu git pull ulang sipd-chrome-extension
 #=============================================
 
-Function Confirm-git_pull {
+function Confirm-git_pull {
     Clear-Host
     Write-Host ' '
     Write-Host "Ketik y dan tekan Enter untuk git pull ulang $sipd."
@@ -291,14 +294,13 @@ Function Confirm-git_pull {
     if ($confirm -eq 'y') {
         Start-Git_Pull_Sipd
     }
-    Start-Menu
 }
 
 #==========================================
 #  Menu Clone ulang sipd-chrome-extension
 #==========================================
 
-Function Confirm-git_clone {
+function Confirm-git_clone {
     Clear-Host
     Write-Host ' '
     Write-Host "Ketik y dan tekan Enter untuk git clone ulang $sipd."
@@ -307,21 +309,20 @@ Function Confirm-git_clone {
     if ($confirm -eq 'y') {
         Start-Git_Clone_Sipd
     }
-    Start-Menu
 }
 
 #============================
 #  Menu update aplikasi Git
 #============================
 
-Function Confirm-update_git {
+function Confirm-update_git {
     Clear-Host
     Write-Host ' '
     Write-Host 'Ketik "y" dan tekan Enter untuk update aplikasi Git.'
     Write-Host ' '
     $confirm = Read-Host "Update aplikasi Git?"
     if ($confirm -eq "y") {
-        Get-Koneksi
+        Start-ping
         try {
             # Nama package official Git adalah "git.install" bukan "git"
             Start-Process powershell.exe -Verb RunAs -ArgumentList "-command choco upgrade git.install --yes | Out-Host" -WindowStyle Normal
@@ -335,21 +336,19 @@ Function Confirm-update_git {
             Write-Error $_.Exception
         }
     }
-    Start-Menu
 }
 
 #===================================
 #  Menu Install ulang aplikasi Git
 #===================================
 
-Function Confirm-reinstall_git {
+function Confirm-reinstall_git {
     Clear-Host
     Write-Host ' '
     Write-Host 'Ketik "y" dan tekan Enter untuk install ulang aplikasi Git.'
     Write-Host ' '
     $confirm = Read-Host "Install ulang aplikasi Git?"
     if ($confirm -eq "y") {
-        Get-Koneksi
         try {
             # Nama package official Git adalah "git.install" bukan "git"
             Start-Process powershell.exe -Verb RunAs -ArgumentList "-command choco uninstall git.install --yes | Out-Host" -WindowStyle Normal
@@ -364,20 +363,19 @@ Function Confirm-reinstall_git {
         }
         Install-git
     }
-    Start-Menu
 }
 
 #===========================================
 #  Menu Download dan install Google Chrome
 #===========================================
 
-Function Confirm-chrome {
+function Confirm-chrome {
     Clear-Host
     write-Host ' '
     write-Host 'Mengecek Google Chrome terinstall...'
     write-Host ' '
     try {
-        # Perlu di ingat choco install googlechrome akan menginstall tidak peduli chrome sudah terinstall
+        # choco install googlechrome akan paksa install tidak peduli chrome sudah terinstall!
         Start-Process chrome.exe
         Wait-Process chrome -Timeout 1 -ErrorAction SilentlyContinue
         Get-Process chrome | Stop-Process -Force
@@ -387,21 +385,20 @@ Function Confirm-chrome {
     catch {
         Install-Chrome
     }
-    Start-Menu
 }
 
 #===================================
 #  Menu Update aplikasi Chocolatey
 #===================================
 
-Function Confirm-update_chocolatey {
+function Confirm-update_chocolatey {
     Clear-Host
     Write-Host ' '
     Write-Host 'Ketik "y" dan tekan Enter untuk update aplikasi Chocolatey.'
     Write-Host ' '
     $confirm = Read-Host "Update aplikasi Chocolatey?"
     if ($confirm -eq "y") {
-        Get-Koneksi
+        Start-ping
         try {
             Start-Process powershell.exe -Verb RunAs -ArgumentList "-command choco upgrade chocolatey --yes | Out-Host" -WindowStyle Normal
             Start-Sleep -s 10
@@ -414,14 +411,13 @@ Function Confirm-update_chocolatey {
             Write-Error $_.Exception
         }
     }
-    Start-Menu
 }
 
 #=======================================
 #  Menu Tentang sipd-chrome-extension.
 #=======================================
 
-Function Open-about_sipd_chrome_extension {
+function Open-about_sipd_chrome_extension {
     Clear-Host
     Write-Host ' '
     Write-Host "Ketik y dan tekan Enter untuk tentang $sipd."
@@ -438,61 +434,13 @@ Function Open-about_sipd_chrome_extension {
             Install-Chrome
         }
     }
-    Start-Menu
-}
-
-#=================
-#  Menu Aplikasi
-#=================
-
-Function Start-Menu {
-    Function Show-Menu {
-        Param (
-            [string]$title = 'Menu APPEM Chrome Extension'
-        )
-        Clear-Host
-        Write-Host "================ $title ================"
-        Write-Host " "
-        Write-Host "1 Buka SIPD."
-        Write-Host "2 Update ulang sipd-chrome-extension"
-        Write-Host "3 Clone ulang sipd-chrome-extension"
-        Write-Host "4 Update aplikasi Git"
-        Write-Host "5 Install ulang aplikasi Git"
-        Write-Host "6 Download dan install Google Chrome"
-        Write-Host "7 Update aplikasi Chocolatey"
-        Write-Host "8 Tentang sipd-chrome-extension"
-        Write-Host "9 Edit config.js"
-        Write-Host "0 Tutup aplikasi"
-        Write-Host " "
-        Write-Host "Pilih lalu Enter untuk memilih."
-        Write-Host " "
-    }
-
-    do {
-        Show-Menu
-        $pilihan = Read-Host "Pilih"
-        switch ($pilihan) {
-        1 {Open-Sipd}
-        2 {Confirm-git_pull}
-        3 {Confirm-git_clone}
-        4 {Confirm-update_git}
-        5 {Confirm-reinstall_git}
-        6 {Confirm-chrome}
-        7 {Confirm-update_chocolatey}
-        8 {Open-about_sipd_chrome_extension}
-        9 {Edit-configjs}
-        0 {Exit}
-        }
-    }
-    until ($null -ne $pilihan)
 }
 
 #===================
 #  Edit config.js
 #===================
 
-Function Edit-configjs {
-
+function Edit-configjs {
     $list_tahun = @'
 Tahun Anggaran:
 1 2021
@@ -505,57 +453,24 @@ Tahun Anggaran:
 8 2028
 9 Ketik manual
 
-0 Kembali ke menu utama
-'@
-
-    $list_prov = @'
-1  Provinsi DKI Jakarta
-2  Provinsi Banten
-3  Provinsi Jawa Barat
-4  Provinsi Jawa Tengah
-5  Provinsi DI Yogyakarta
-6  Provinsi Jawa Timur
-7  Aceh
-8  Provinsi Sumatera Utara
-9  Provinsi Sumatera Barat
-10 Provinsi Riau
-11 Provinsi Jambi
-12 Provinsi Sumatera Selatan
-13 Provinsi Bengkulu
-14 Provinsi Lampung
-15 Provinsi Kalimantan Utara
-16 Provinsi Kalimantan Barat
-17 Provinsi Kalimantan Tengah
-18 Provinsi Kalimantan Timur
-19 Provinsi Kalimantan Selatan
-20 Provinsi Sulawesi Utara
-21 Provinsi Gorontalo
-22 Provinsi Sulawesi Tengah
-23 Provinsi Sulawesi Barat
-24 Provinsi Sulawesi Selatan
-25 Provinsi Sulawesi Tenggara
-26 Provinsi Maluku
-27 Provinsi Maluku Utara
-28 Provinsi Bali
-29 Provinsi Nusa Tenggara Barat
-30 Provinsi Nusa Tenggara Timur
-31 Provinsi Bangka Belitung
-32 Provinsi Kepulauan Riau
-33 Provinsi Papua Barat dan Provinsi Papua Barat Daya
-34 Provinsi Papua, Provinsi Papua Selatan, Provinsi Papua Tengah, dan Provinsi Papua Pegunungan
+0 Kembali ke Menu Utama
 '@
 
     # Menampilkan input id daerah dan url sipd lalu mereplace file config.js
-    Function Show-id_url {
+    function Show-id_url {
+        $show_conf = @"
+Konfigurasi config.js:
+
+Tahun Anggaran: $tahun_anggaran
+ID Daerah: $id_daerah
+URL SIPD: https://$i.sipd.kemendagri.go.id/
+
+Menyimpan ke $drive\$sipd\config.js
+"@
+
         Clear-Host
         Write-Host ' '
-        Write-Host 'Konfigurasi config.js:'
-        Write-Host ' '
-        Write-Host "Tahun Anggaran: $tahun_anggaran"
-        Write-Host "ID Daerah: $id_daerah"
-        write-Host "URL SIPD: https://$i.sipd.kemendagri.go.id/"
-        Write-Host ' '
-        Write-Host "Menyimpan ke $drive\$sipd\config.js"
+        Write-Host $show_conf
         Start-Sleep -s 5
     }
 
@@ -565,7 +480,6 @@ Tahun Anggaran:
         # if (-Not(Test-Path "$drive\$sipd\config.js")) {Write-Host ''}
         Write-Host ' '
         Write-Host $list_tahun
-        Write-Host ' '
         $pilih_th = Read-Host "Pilih Tahun Anggaran"
         switch ($pilih_th) {
             1 {$tahun_anggaran = "2021"}
@@ -585,12 +499,103 @@ Tahun Anggaran:
     }
     until ($null -ne $tahun_anggaran)
 
+    Show-Provinsi
+
+    # Di Pisah ke function Edit-URL_SIPD ini karena list daerah yang terlalu panjang
+}
+
+#=================
+#  Menu Aplikasi
+#=================
+
+function Start-Menu {
+    $title = 'Menu APPEM Chrome Extension'
+    $menu_list = @"
+================ $title ================
+
+1 Buka SIPD.
+2 Update ulang sipd-chrome-extension
+3 Clone ulang sipd-chrome-extension
+4 Update aplikasi Git
+5 Install ulang aplikasi Git
+6 Download dan install Google Chrome
+7 Update aplikasi Chocolatey
+8 Tentang sipd-chrome-extension
+9 Edit config.js
+0 Tutup aplikasi
+
+Pilih lalu Enter untuk memilih.
+"@
+
+    do {
+        Clear-Host
+        Write-Host $menu_list
+        Write-Host ' '
+        $pilihan = Read-Host "Pilih"
+        switch ($pilihan) {
+        1 {Open-Sipd}
+        2 {Confirm-git_pull}
+        3 {Confirm-git_clone}
+        4 {Confirm-update_git}
+        5 {Confirm-reinstall_git}
+        6 {Confirm-chrome}
+        7 {Confirm-update_chocolatey}
+        8 {Open-about_sipd_chrome_extension}
+        9 {Edit-configjs}
+        0 {Exit}
+        }
+    }
+    until ($pilihan -eq '0')
+}
+
+#===================
+#  Daftar Provinsi
+#===================
+
+function Show-Provinsi {
+    $list_prov = @'
+    1  Provinsi DKI Jakarta
+    2  Provinsi Banten
+    3  Provinsi Jawa Barat
+    4  Provinsi Jawa Tengah
+    5  Provinsi DI Yogyakarta
+    6  Provinsi Jawa Timur
+    7  Aceh
+    8  Provinsi Sumatera Utara
+    9  Provinsi Sumatera Barat
+    10 Provinsi Riau
+    11 Provinsi Jambi
+    12 Provinsi Sumatera Selatan
+    13 Provinsi Bengkulu
+    14 Provinsi Lampung
+    15 Provinsi Kalimantan Utara
+    16 Provinsi Kalimantan Barat
+    17 Provinsi Kalimantan Tengah
+    18 Provinsi Kalimantan Timur
+    19 Provinsi Kalimantan Selatan
+    20 Provinsi Sulawesi Utara
+    21 Provinsi Gorontalo
+    22 Provinsi Sulawesi Tengah
+    23 Provinsi Sulawesi Barat
+    24 Provinsi Sulawesi Selatan
+    25 Provinsi Sulawesi Tenggara
+    26 Provinsi Maluku
+    27 Provinsi Maluku Utara
+    28 Provinsi Bali
+    29 Provinsi Nusa Tenggara Barat
+    30 Provinsi Nusa Tenggara Timur
+    31 Provinsi Bangka Belitung
+    32 Provinsi Kepulauan Riau
+    33 Provinsi Papua Barat dan Provinsi Papua Barat Daya
+    34 Provinsi Papua, Provinsi Papua Selatan, Provinsi Papua Tengah, dan Provinsi Papua Pegunungan
+'@
+
     do {
         Clear-Host
         Write-Host ' '
         Write-Host $list_prov
         Write-Host ' '
-        Write-Host '0 Kembali ke menu utama'
+        Write-Host '0 Kembali ke Menu Utama'
         Write-Host ' '
         $pilih_prov = Read-Host 'Pilih Provinsi'
         switch ($pilih_prov) {
@@ -633,610 +638,13 @@ Tahun Anggaran:
     }
     until ($null -ne $pilih_prov)
 
-    do {
-        Clear-Host
-        Write-Host ' '
-        Show-Daerah($pilih_prov)
-        Write-Host ' '
-        Write-Host '0 Kembali ke menu utama'
-        Write-Host ' '
-        $id_daerah = Read-Host 'Pilih Daerah'
-        switch ($id_daerah) {
-            1  {$i = 'jakarta'}
-            8  {$i = 'jabarprov'}
-            9  {$i = 'bandungkab'}
-            10 {$i = 'bekasikab'}
-            11 {$i = 'bogorkab'}
-            12 {$i = 'ciamiskab'}
-            13 {$i = 'cianjurkab'}
-            14 {$i = 'cirebonkab'}
-            15 {$i = 'garutkab'}
-            16 {$i = 'indramayukab'}
-            17 {$i = 'karawangkab'}
-            18 {$i = 'kuningankab'}
-            19 {$i = 'majalengkakab'}
-            20 {$i = 'purwakartakab'}
-            21 {$i = 'subangkab'}
-            22 {$i = 'sukabumikab'}
-            23 {$i = 'sumedangkab'}
-            24 {$i = 'tasikmalayakab'}
-            25 {$i = 'bandung'}
-            26 {$i = 'bekasi'}
-            27 {$i = 'bogor'}
-            28 {$i = 'cirebon'}
-            29 {$i = 'depok'}
-            30 {$i = 'sukabumi'}
-            31 {$i = 'cimahi'}
-            32 {$i = 'tasikmalaya'}
-            33 {$i = 'banjar'}
-            34 {$i = 'bandung baratkab'}
-            35 {$i = 'jatengprov'}
-            36 {$i = 'banjarnegarakab'}
-            37 {$i = 'banyumaskab'}
-            38 {$i = 'batangkab'}
-            39 {$i = 'blorakab'}
-            40 {$i = 'boyolalikab'}
-            41 {$i = 'brebeskab'}
-            42 {$i = 'cilacapkab'}
-            43 {$i = 'demakkab'}
-            44 {$i = 'grobogankab'}
-            45 {$i = 'jeparakab'}
-            46 {$i = 'karanganyarkab'}
-            47 {$i = 'kebumenkab'}
-            48 {$i = 'kendalkab'}
-            49 {$i = 'klatenkab'}
-            50 {$i = 'kuduskab'}
-            51 {$i = 'magelangkab'}
-            52 {$i = 'patikab'}
-            53 {$i = 'pekalongankab'}
-            54 {$i = 'pemalangkab'}
-            55 {$i = 'purbalinggakab'}
-            56 {$i = 'purworejokab'}
-            57 {$i = 'rembangkab'}
-            58 {$i = 'semarangkab'}
-            59 {$i = 'sragenkab'}
-            60 {$i = 'sukoharjokab'}
-            61 {$i = 'tegalkab'}
-            62 {$i = 'temanggungkab'}
-            63 {$i = 'wonogirikab'}
-            64 {$i = 'wonosobokab'}
-            65 {$i = 'magelang'}
-            66 {$i = 'pekalongan'}
-            67 {$i = 'salatiga'}
-            68 {$i = 'semarang'}
-            69 {$i = 'surakarta'}
-            70 {$i = 'tegal'}
-            71 {$i = 'jogjaprov'}
-            72 {$i = 'bantulkab'}
-            73 {$i = 'gunungkidulkab'}
-            74 {$i = 'kulon progokab'}
-            75 {$i = 'slemankab'}
-            76 {$i = 'jogjakota'}
-            77 {$i = 'jatimprov'}
-            78 {$i = 'bangkalankab'}
-            79 {$i = 'banyuwangikab'}
-            80 {$i = 'blitarkab'}
-            81 {$i = 'bojonegorokab'}
-            82 {$i = 'bondowosokab'}
-            83 {$i = 'gresikkab'}
-            84 {$i = 'jemberkab'}
-            85 {$i = 'jombangkab'}
-            86 {$i = 'kedirikab'}
-            87 {$i = 'lamongankab'}
-            88 {$i = 'lumajangkab'}
-            89 {$i = 'madiunkab'}
-            90 {$i = 'magetankab'}
-            91 {$i = 'malangkab'}
-            92 {$i = 'mojokertokab'}
-            93 {$i = 'nganjukkab'}
-            94 {$i = 'ngawikab'}
-            95 {$i = 'pacitankab'}
-            96 {$i = 'pamekasankab'}
-            97 {$i = 'pasuruankab'}
-            98 {$i = 'ponorogokab'}
-            99 {$i = 'probolinggokab'}
-            100 {$i = 'sampangkab'}
-            101 {$i = 'sidoarjokab'}
-            102 {$i = 'situbondokab'}
-            103 {$i = 'sumenepkab'}
-            104 {$i = 'trenggalekkab'}
-            105 {$i = 'tubankab'}
-            106 {$i = 'tulungagungkab'}
-            107 {$i = 'blitar'}
-            108 {$i = 'kediri'}
-            109 {$i = 'madiun'}
-            110 {$i = 'malang'}
-            111 {$i = 'mojokerto'}
-            112 {$i = 'pasuruan'}
-            113 {$i = 'probolinggo'}
-            114 {$i = 'surabaya'}
-            115 {$i = 'batu'}
-            116 {$i = 'acehprov'}
-            117 {$i = 'acehbaratkab'}
-            118 {$i = 'acehbesarkab'}
-            119 {$i = 'acehselatankab'}
-            120 {$i = 'acehsingkilkab'}
-            121 {$i = 'acehtengahkab'}
-            122 {$i = 'acehtenggarakab'}
-            123 {$i = 'acehtimurkab'}
-            124 {$i = 'acehutarakab'}
-            125 {$i = 'bireuenkab'}
-            126 {$i = 'pidiekab'}
-            127 {$i = 'simeuluekab'}
-            128 {$i = 'bandaaceh'}
-            129 {$i = 'sabang'}
-            130 {$i = 'langsa'}
-            131 {$i = 'lhokseumawe'}
-            132 {$i = 'naganrayakab'}
-            133 {$i = 'acehjayakab'}
-            134 {$i = 'acehbaratdayakab'}
-            135 {$i = 'gayolueskab'}
-            136 {$i = 'acehtamiangkab'}
-            137 {$i = 'benermeriahkab'}
-            138 {$i = 'subulussalam'}
-            139 {$i = 'pidiejayakab'}
-            141 {$i = 'sumutprov'}
-            142 {$i = 'asahankab'}
-            143 {$i = 'dairikab'}
-            144 {$i = 'deliserdangkab'}
-            145 {$i = 'tanahkarokab'}
-            146 {$i = 'labuhanbatukab'}
-            147 {$i = 'langkatkab'}
-            148 {$i = 'mandailingnatalkab'}
-            149 {$i = 'niaskab'}
-            150 {$i = 'simalungunkab'}
-            151 {$i = 'tapanuliselatankab'}
-            152 {$i = 'tapanulitengahkab'}
-            153 {$i = 'tapanuliutarakab'}
-            154 {$i = 'tobakab'}
-            155 {$i = 'binjai'}
-            156 {$i = 'medan'}
-            157 {$i = 'pematangsiantar'}
-            158 {$i = 'sibolga'}
-            159 {$i = 'tanjungbalai'}
-            160 {$i = 'tebingtinggi'}
-            161 {$i = 'padangsidempuan'}
-            162 {$i = 'pakpakbharatkab'}
-            163 {$i = 'niasselatankab'}
-            164 {$i = 'humbanghasundutankab'}
-            165 {$i = 'serdangbedagaikab'}
-            166 {$i = 'samosirkab'}
-            167 {$i = 'batubarakab'}
-            173 {$i = 'padanglawaskab'}
-            174 {$i = 'padanglawasutarakab'}
-            175 {$i = 'labuhanbatuutarakab'}
-            176 {$i = 'labuhanbatuselatankab'}
-            177 {$i = 'niasutarakab'}
-            178 {$i = 'niasbaratkab'}
-            179 {$i = 'gunungsitoli'}
-            180 {$i = 'sumbarprov'}
-            181 {$i = 'limapuluhkotakab'}
-            182 {$i = 'agamkab'}
-            183 {$i = 'kepulauanmentawaikab'}
-            184 {$i = 'padangpariamankab'}
-            185 {$i = 'pasamankab'}
-            186 {$i = 'pesisirselatankab'}
-            187 {$i = 'sijunjungkab'}
-            188 {$i = 'solokkab'}
-            189 {$i = 'tanahdatarkab'}
-            190 {$i = 'bukittinggi'}
-            191 {$i = 'padangpanjang'}
-            192 {$i = 'padang'}
-            193 {$i = 'payakumbuh'}
-            194 {$i = 'sawahlunto'}
-            195 {$i = 'solok'}
-            196 {$i = 'pariaman'}
-            197 {$i = 'pasamanbaratkab'}
-            198 {$i = 'dharmasrayakab'}
-            199 {$i = 'solokselatankab'}
-            202 {$i = 'riauprov'}
-            203 {$i = 'bengkaliskab'}
-            204 {$i = 'indragirihilirkab'}
-            205 {$i = 'indragirihulukab'}
-            206 {$i = 'kamparkab'}
-            207 {$i = 'kuantansingingikab'}
-            208 {$i = 'pelalawankab'}
-            209 {$i = 'rokanhilirkab'}
-            210 {$i = 'rokanhulukab'}
-            211 {$i = 'siakkab'}
-            212 {$i = 'dumai'}
-            213 {$i = 'pekanbaru'}
-            215 {$i = 'kepulauanmerantikab'}
-            216 {$i = 'jambiprov'}
-            217 {$i = 'batangharikab'}
-            218 {$i = 'bungokab'}
-            219 {$i = 'kerincikab'}
-            220 {$i = 'meranginkab'}
-            221 {$i = 'muarojambikab'}
-            222 {$i = 'sarolangunkab'}
-            223 {$i = 'tanjungjabungbaratkab'}
-            224 {$i = 'tanjungjabungtimurkab'}
-            225 {$i = 'tebokab'}
-            226 {$i = 'jambi'}
-            228 {$i = 'sungaipenuh'}
-            229 {$i = 'sumselprov'}
-            230 {$i = 'lahatkab'}
-            231 {$i = 'musibanyuasinkab'}
-            232 {$i = 'musirawaskab'}
-            233 {$i = 'muaraenimkab'}
-            234 {$i = 'ogankomeringilirkab'}
-            235 {$i = 'ogankomeringulukab'}
-            236 {$i = 'palembang'}
-            237 {$i = 'pagaralam'}
-            238 {$i = 'lubuklinggau'}
-            239 {$i = 'prabumulih'}
-            240 {$i = 'banyuasinkab'}
-            241 {$i = 'oganilirkab'}
-            242 {$i = 'okutimurkab'}
-            243 {$i = 'okuselatankab'}
-            244 {$i = 'empatlawangkab'}
-            246 {$i = 'lampungprov'}
-            247 {$i = 'lampungbaratkab'}
-            248 {$i = 'lampungselatankab'}
-            249 {$i = 'lampungtengahkab'}
-            250 {$i = 'lampungutarakab'}
-            251 {$i = 'lampungtimurkab'}
-            252 {$i = 'tanggamuskab'}
-            253 {$i = 'tulangbawangkab'}
-            254 {$i = 'waykanankab'}
-            255 {$i = 'bandarlampung'}
-            256 {$i = 'metro'}
-            257 {$i = 'pesawarankab'}
-            258 {$i = 'pringsewukab'}
-            259 {$i = 'mesujikab'}
-            260 {$i = 'tulangbawangbaratkab'}
-            261 {$i = 'kalbarprov'}
-            262 {$i = 'bengkayangkab'}
-            263 {$i = 'landakkab'}
-            264 {$i = 'kapuashulukab'}
-            265 {$i = 'ketapangkab'}
-            267 {$i = 'sambaskab'}
-            268 {$i = 'sanggaukab'}
-            269 {$i = 'sintangkab'}
-            270 {$i = 'pontianak'}
-            271 {$i = 'singkawang'}
-            272 {$i = 'sekadaukab'}
-            273 {$i = 'melawikab'}
-            274 {$i = 'kayongutarakab'}
-            275 {$i = 'kuburayakab'}
-            276 {$i = 'kaltengprov'}
-            277 {$i = 'baritoselatankab'}
-            278 {$i = 'baritoutarakab'}
-            279 {$i = 'kapuaskab'}
-            280 {$i = 'kotawaringinbaratkab'}
-            281 {$i = 'kotawaringintimurkab'}
-            282 {$i = 'palangkaraya'}
-            283 {$i = 'baritotimurkab'}
-            284 {$i = 'murungrayakab'}
-            285 {$i = 'pulangpisaukab'}
-            286 {$i = 'gunungmaskab'}
-            287 {$i = 'lamandaukab'}
-            288 {$i = 'sukamarakab'}
-            289 {$i = 'katingankab'}
-            290 {$i = 'seruyankab'}
-            291 {$i = 'kalselprov'}
-            292 {$i = 'banjarkab'}
-            293 {$i = 'baritokualakab'}
-            294 {$i = 'hulusungaiselatankab'}
-            295 {$i = 'hulusungaitengahkab'}
-            296 {$i = 'hulusungaiutarakab'}
-            297 {$i = 'kotabarukab'}
-            298 {$i = 'tabalongkab'}
-            299 {$i = 'tanahlautkab'}
-            300 {$i = 'tapinkab'}
-            301 {$i = 'banjarbaru'}
-            302 {$i = 'banjarmasin'}
-            303 {$i = 'balangankab'}
-            304 {$i = 'tanahbumbukab'}
-            307 {$i = 'kaltimprov'}
-            308 {$i = 'beraukab'}
-            309 {$i = 'kutaikartanegarakab'}
-            310 {$i = 'kutaibaratkab'}
-            311 {$i = 'kutaitimurkab'}
-            312 {$i = 'pasirkab'}
-            313 {$i = 'balikpapan'}
-            314 {$i = 'bontang'}
-            315 {$i = 'samarinda'}
-            316 {$i = 'penajampaserutarakab'}
-            318 {$i = 'sulutprov'}
-            319 {$i = 'bolaangmongondowkab'}
-            320 {$i = 'minahasakab'}
-            321 {$i = 'sangihekab'}
-            322 {$i = 'bitung'}
-            323 {$i = 'manado'}
-            324 {$i = 'kepulauantalaudkab'}
-            325 {$i = 'minahasaselatankab'}
-            326 {$i = 'tomohon'}
-            327 {$i = 'minahasautarakab'}
-            328 {$i = 'kotamubagu'}
-            329 {$i = 'bolaangmongondowutarakab'}
-            330 {$i = 'kepsiautagulandangbiarokab'}
-            331 {$i = 'minahasatenggarakab'}
-            332 {$i = 'bolaangmongondowtimurkab'}
-            333 {$i = 'bolaangmongondowselatankab'}
-            334 {$i = 'sultengprov'}
-            335 {$i = 'banggaikab'}
-            336 {$i = 'banggaikepulauankab'}
-            337 {$i = 'buolkab'}
-            338 {$i = 'toli-tolikab'}
-            339 {$i = 'donggalakab'}
-            340 {$i = 'morowalikab'}
-            341 {$i = 'posokab'}
-            342 {$i = 'palu'}
-            343 {$i = 'parigimoutongkab'}
-            344 {$i = 'tojouna-unakab'}
-            345 {$i = 'sigikab'}
-            346 {$i = 'sulselprov'}
-            347 {$i = 'bantaengkab'}
-            348 {$i = 'barrukab'}
-            349 {$i = 'bonekab'}
-            350 {$i = 'bulukumbakab'}
-            351 {$i = 'enrekangkab'}
-            352 {$i = 'gowakab'}
-            353 {$i = 'jenepontokab'}
-            354 {$i = 'luwukab'}
-            355 {$i = 'luwuutarakab'}
-            356 {$i = 'maroskab'}
-            357 {$i = 'pangkajenekepulauankab'}
-            358 {$i = 'pinrangkab'}
-            359 {$i = 'kepulauanselayarkab'}
-            360 {$i = 'sidenrengrappangkab'}
-            361 {$i = 'sinjaikab'}
-            362 {$i = 'soppengkab'}
-            363 {$i = 'takalarkab'}
-            364 {$i = 'tanatorajakab'}
-            365 {$i = 'wajokab'}
-            366 {$i = 'pare-pare'}
-            367 {$i = 'makassar'}
-            368 {$i = 'palopo'}
-            369 {$i = 'luwutimurkab'}
-            370 {$i = 'torajautarakab'}
-            371 {$i = 'sultraprov'}
-            372 {$i = 'butonkab'}
-            373 {$i = 'konawekab'}
-            374 {$i = 'kolakakab'}
-            375 {$i = 'munakab'}
-            376 {$i = 'kendari'}
-            377 {$i = 'bau-bau'}
-            378 {$i = 'konaweselatankab'}
-            379 {$i = 'bombanakab'}
-            380 {$i = 'wakatobikab'}
-            381 {$i = 'kolakautarakab'}
-            382 {$i = 'konaweutarakab'}
-            383 {$i = 'butonutarakab'}
-            384 {$i = 'malukuprov'}
-            385 {$i = 'kepulauantanimbarkab'}
-            386 {$i = 'malukutengahkab'}
-            387 {$i = 'malukutenggarakab'}
-            388 {$i = 'burukab'}
-            389 {$i = 'ambon'}
-            390 {$i = 'serambagianbaratkab'}
-            391 {$i = 'serambagiantimurkab'}
-            392 {$i = 'kepulauanarukab'}
-            393 {$i = 'tual'}
-            394 {$i = 'malukubaratdayakab'}
-            395 {$i = 'buruselatankab'}
-            396 {$i = 'baliprov'}
-            397 {$i = 'badungkab'}
-            398 {$i = 'banglikab'}
-            399 {$i = 'bulelengkab'}
-            400 {$i = 'gianyarkab'}
-            401 {$i = 'jembranakab'}
-            402 {$i = 'karangasemkab'}
-            403 {$i = 'klungkungkab'}
-            404 {$i = 'tabanankab'}
-            405 {$i = 'denpasar'}
-            407 {$i = 'ntbprov'}
-            408 {$i = 'bimakab'}
-            409 {$i = 'dompukab'}
-            410 {$i = 'lombokbaratkab'}
-            411 {$i = 'lomboktengahkab'}
-            412 {$i = 'lomboktimurkab'}
-            413 {$i = 'sumbawakab'}
-            414 {$i = 'mataram'}
-            415 {$i = 'bima'}
-            416 {$i = 'sumbawabaratkab'}
-            417 {$i = 'lombokutarakab'}
-            418 {$i = 'nttprov'}
-            419 {$i = 'alorkab'}
-            420 {$i = 'belukab'}
-            421 {$i = 'endekab'}
-            422 {$i = 'florestimurkab'}
-            423 {$i = 'kupangkab'}
-            424 {$i = 'lembatakab'}
-            425 {$i = 'manggaraikab'}
-            426 {$i = 'ngadakab'}
-            427 {$i = 'sikkakab'}
-            428 {$i = 'sumbabaratkab'}
-            429 {$i = 'sumbatimurkab'}
-            430 {$i = 'timortengahselatankab'}
-            431 {$i = 'timortengahutarakab'}
-            432 {$i = 'kupang'}
-            433 {$i = 'rotendaokab'}
-            434 {$i = 'manggaraibaratkab'}
-            435 {$i = 'nagekeokab'}
-            436 {$i = 'sumbabaratdayakab'}
-            437 {$i = 'sumbatengahkab'}
-            438 {$i = 'manggaraitimurkab'}
-            439 {$i = 'saburaijuakab'}
-            440 {$i = 'papuaprov'}
-            441 {$i = 'biaknumforkab'}
-            442 {$i = 'jayapurakab'}
-            449 {$i = 'kepulauanyapenkab'}
-            450 {$i = 'jayapura'}
-            451 {$i = 'sarmikab'}
-            452 {$i = 'keeromkab'}
-            459 {$i = 'waropenkab'}
-            460 {$i = 'supiorikab'}
-            461 {$i = 'mamberamorayakab'}
-            468 {$i = 'puncakkab'}
-            471 {$i = 'bengkuluprov'}
-            472 {$i = 'bengkuluselatankab'}
-            473 {$i = 'bengkuluutarakab'}
-            474 {$i = 'rejanglebongkab'}
-            475 {$i = 'bengkulu'}
-            476 {$i = 'kaurkab'}
-            477 {$i = 'selumakab'}
-            478 {$i = 'muko-mukokab'}
-            479 {$i = 'lebongkab'}
-            480 {$i = 'kepahiangkab'}
-            481 {$i = 'bengkulutengahkab'}
-            482 {$i = 'malutprov'}
-            483 {$i = 'halmaheratengahkab'}
-            484 {$i = 'halmaherabaratkab'}
-            485 {$i = 'ternate'}
-            486 {$i = 'halmaheratimurkab'}
-            487 {$i = 'tidorekepulauan'}
-            488 {$i = 'kepulauansulakab'}
-            489 {$i = 'halmaheraselatankab'}
-            490 {$i = 'halmaherautarakab'}
-            491 {$i = 'morotaikab'}
-            492 {$i = 'bantenprov'}
-            493 {$i = 'lebakkab'}
-            494 {$i = 'pandeglangkab'}
-            495 {$i = 'serangkab'}
-            496 {$i = 'tangerangkab'}
-            497 {$i = 'cilegon'}
-            498 {$i = 'tangerang'}
-            499 {$i = 'serang'}
-            500 {$i = 'tangerangselatan'}
-            501 {$i = 'babelprov'}
-            502 {$i = 'bangkakab'}
-            503 {$i = 'belitungkab'}
-            504 {$i = 'pangkalpinang'}
-            505 {$i = 'bangkaselatankab'}
-            506 {$i = 'bangkatengahkab'}
-            507 {$i = 'bangkabaratkab'}
-            508 {$i = 'belitungtimurkab'}
-            510 {$i = 'gorontaloprov'}
-            511 {$i = 'boalemokab'}
-            512 {$i = 'gorontalokab'}
-            513 {$i = 'gorontalo'}
-            514 {$i = 'pohuwatokab'}
-            515 {$i = 'bonebolangokab'}
-            516 {$i = 'gorontaloutarakab'}
-            519 {$i = 'kepriprov'}
-            520 {$i = 'bintankab'}
-            521 {$i = 'natunakab'}
-            522 {$i = 'karimunkab'}
-            523 {$i = 'batam'}
-            524 {$i = 'tanjungpinang'}
-            525 {$i = 'linggakab'}
-            527 {$i = 'kepulauananambaskab'}
-            528 {$i = 'papuabaratprov'}
-            530 {$i = 'manokwarikab'}
-            531 {$i = 'fak-fakkab'}
-            535 {$i = 'telukbintunikab'}
-            536 {$i = 'telukwondamakab'}
-            537 {$i = 'kaimanakab'}
-            540 {$i = 'sulbarprov'}
-            541 {$i = 'majenekab'}
-            542 {$i = 'mamujukab'}
-            543 {$i = 'polewalimandarkab'}
-            544 {$i = 'mamasakab'}
-            545 {$i = 'pasangkayukab'}
-            546 {$i = 'kaltaraprov'}
-            547 {$i = 'bulungankab'}
-            548 {$i = 'malinaukab'}
-            549 {$i = 'nunukankab'}
-            550 {$i = 'tanatidungkab'}
-            551 {$i = 'tarakan'}
-            552 {$i = 'pangandarankab'}
-            553 {$i = 'mempawahkab'}
-            554 {$i = 'mahakamulukab'}
-            555 {$i = 'pesisirbaratkab'}
-            556 {$i = 'pulautaliabukab'}
-            557 {$i = 'malakakab'}
-            558 {$i = 'manokwariselatankab'}
-            559 {$i = 'pegununganarfakkab'}
-            560 {$i = 'mamujutengahkab'}
-            561 {$i = 'banggailautkab'}
-            562 {$i = 'morowaliutarakab'}
-            563 {$i = 'butonselatankab'}
-            564 {$i = 'butontengahkab'}
-            565 {$i = 'kolakatimurkab'}
-            566 {$i = 'konawekepulauankab'}
-            567 {$i = 'munabaratkab'}
-            569 {$i = 'musirawasutarakab'}
-            570 {$i = 'penukalabablematangilirkab'}
-            588 {$i = 'papuaselatanprov'}
-            589 {$i = 'papuatengahprov'}
-            590 {$i = 'papuapegununganprov'}
-            591 {$i = 'meraukekab'}
-            592 {$i = 'bovendigoelkab'}
-            593 {$i = 'mappikab'}
-            594 {$i = 'asmatkab'}
-            595 {$i = 'nabirekab'}
-            596 {$i = 'puncakjayakab'}
-            597 {$i = 'paniaikab'}
-            598 {$i = 'mimikakab'}
-            599 {$i = 'dogiyaikab'}
-            600 {$i = 'intanjayakab'}
-            601 {$i = 'deiyaikab'}
-            602 {$i = 'jayawijayakab'}
-            603 {$i = 'pegununganbintangkab'}
-            604 {$i = 'yahukimokab'}
-            605 {$i = 'tolikarakab'}
-            606 {$i = 'mamberamotengahkab'}
-            607 {$i = 'yalimokab'}
-            608 {$i = 'lannyjayakab'}
-            609 {$i = 'ndugakab'}
-            610 {$i = 'papuabaratdayaprov'}
-            611 {$i = 'sorongkab'}
-            612 {$i = 'sorongselatankab'}
-            613 {$i = 'rajaampatkab'}
-            614 {$i = 'tambrauwkab'}
-            615 {$i = 'maybratkab'}
-            616 {$i = 'sorong'}
-            '0'   {Start-Menu}
-        }
-    }
-    until ($null -ne $i)
-
-    Show-id_url
-
-    $configjs = @"
-var config = {
-	tahun_anggaran : "$tahun_anggaran", // Tahun anggaran
-	id_daerah : "$id_daerah", // ID daerah bisa didapat dengan ketikan kode drakor di console log SIPD Merah atau cek value dari pilihan pemda di halaman login SIPD Biru
-	sipd_url : "https://$i.sipd.kemendagri.go.id/", // alamat sipd sesuai kabupaten kota masing-masing
-	jml_rincian : 500, // maksimal jumlah rincian yang dikirim ke server lokal dalam satu request
-	realisasi : false, // get realisasi rekening
-	url_server_lokal : "https://xxxxxxxxxxxxxxx/wp-admin/admin-ajax.php", // url server lokal
-	api_key : "xxxxxxxxxxxxxxxxxxx", // api key server lokal disesuaikan dengan api dari WP plugin
-	sipd_private : false, // koneksi ke plugin SIPD private
-	tapd : [{
-		nama: "nama tim tapd 1",
-		nip: "12343464575656",
-		jabatan: "Sekda",
-	},{
-		nama: "nama tim tapd 2",
-		nip: "12343464575652",
-		jabatan: "Kepala Bappeda",
-	},{
-		nama: "nama tim tapd 3",
-		nip: "12343464575653",
-		jabatan: "Kepala BPPKAD",
-	}], // nama tim TAPD dalam bentuk array dan object maksimal 8 orang sesuai format SIPD
-	tgl_rka : "false", // pilihan nilai default "auto"=auto generate, false=fitur dimatikan, "isi tanggal sendiri"=tanggal ini akan muncul sebagai nilai default dan bisa diedit
-	nama_daerah : "Magetan", // akan tampil sebelum tgl_rka
-	kepala_daerah : "Bapak / Ibu xxx xx.xx", // akan tampil di lampiran perda
-	replace_logo : false, // jika nilai true maka akan mengganti logo di SIPD dengan logo di file img/logo.png
-	no_perkada : 'xx/xx/xx/xx', // settingan no_perkada ini untuk edit nomor, tanggal dan keterangan perkada, setting false atau kosongkan value untuk menonaktifkan
-	tampil_edit_hapus_rinci : true // Menampilkan tombol edit dan hapus di halaman Detail Rincian sub kegiatan
-};
-"@
-
-    $configjs | Out-File -Encoding utf8 -LiteralPath "$drive\$sipd\config.js" -Force
-
-    Start-Menu
+    Edit-URL_SIPD($pilih_prov)
 }
 
 #=================
 #  Daftar Daerah
 #=================
 
-# Daftar Daerah
 function Show-Daerah {
     Param(
         [Parameter(Mandatory = $true)]$prov
@@ -1858,12 +1266,617 @@ function Show-Daerah {
     }
 }
 
-# Mengecek config.js
-if (-Not(Test-Path "$drive\$sipd\config.js")) {
-    Edit-configjs
+#===========================
+#  Lanjutan Edit config.js
+#===========================
+
+function Edit-URL_SIPD {
+    param (
+        [Parameter(Mandatory = $true)]$no_pilihan_prov
+    )
+    
+    do {
+        Clear-Host
+        Write-Host ' '
+        Show-Daerah($no_pilihan_prov)
+        Write-Host ' '
+        Write-Host '0 Kembali ke Menu Utama'
+        Write-Host ' '
+        $id_daerah = Read-Host 'Pilih Daerah'
+        switch ($id_daerah) {
+            1   {$i = 'jakarta'}
+            8   {$i = 'jabarprov'}
+            9   {$i = 'bandungkab'}
+            10  {$i = 'bekasikab'}
+            11  {$i = 'bogorkab'}
+            12  {$i = 'ciamiskab'}
+            13  {$i = 'cianjurkab'}
+            14  {$i = 'cirebonkab'}
+            15  {$i = 'garutkab'}
+            16  {$i = 'indramayukab'}
+            17  {$i = 'karawangkab'}
+            18  {$i = 'kuningankab'}
+            19  {$i = 'majalengkakab'}
+            20  {$i = 'purwakartakab'}
+            21  {$i = 'subangkab'}
+            22  {$i = 'sukabumikab'}
+            23  {$i = 'sumedangkab'}
+            24  {$i = 'tasikmalayakab'}
+            25  {$i = 'bandung'}
+            26  {$i = 'bekasi'}
+            27  {$i = 'bogor'}
+            28  {$i = 'cirebon'}
+            29  {$i = 'depok'}
+            30  {$i = 'sukabumi'}
+            31  {$i = 'cimahi'}
+            32  {$i = 'tasikmalaya'}
+            33  {$i = 'banjar'}
+            34  {$i = 'bandung baratkab'}
+            35  {$i = 'jatengprov'}
+            36  {$i = 'banjarnegarakab'}
+            37  {$i = 'banyumaskab'}
+            38  {$i = 'batangkab'}
+            39  {$i = 'blorakab'}
+            40  {$i = 'boyolalikab'}
+            41  {$i = 'brebeskab'}
+            42  {$i = 'cilacapkab'}
+            43  {$i = 'demakkab'}
+            44  {$i = 'grobogankab'}
+            45  {$i = 'jeparakab'}
+            46  {$i = 'karanganyarkab'}
+            47  {$i = 'kebumenkab'}
+            48  {$i = 'kendalkab'}
+            49  {$i = 'klatenkab'}
+            50  {$i = 'kuduskab'}
+            51  {$i = 'magelangkab'}
+            52  {$i = 'patikab'}
+            53  {$i = 'pekalongankab'}
+            54  {$i = 'pemalangkab'}
+            55  {$i = 'purbalinggakab'}
+            56  {$i = 'purworejokab'}
+            57  {$i = 'rembangkab'}
+            58  {$i = 'semarangkab'}
+            59  {$i = 'sragenkab'}
+            60  {$i = 'sukoharjokab'}
+            61  {$i = 'tegalkab'}
+            62  {$i = 'temanggungkab'}
+            63  {$i = 'wonogirikab'}
+            64  {$i = 'wonosobokab'}
+            65  {$i = 'magelang'}
+            66  {$i = 'pekalongan'}
+            67  {$i = 'salatiga'}
+            68  {$i = 'semarang'}
+            69  {$i = 'surakarta'}
+            70  {$i = 'tegal'}
+            71  {$i = 'jogjaprov'}
+            72  {$i = 'bantulkab'}
+            73  {$i = 'gunungkidulkab'}
+            74  {$i = 'kulon progokab'}
+            75  {$i = 'slemankab'}
+            76  {$i = 'jogjakota'}
+            77  {$i = 'jatimprov'}
+            78  {$i = 'bangkalankab'}
+            79  {$i = 'banyuwangikab'}
+            80  {$i = 'blitarkab'}
+            81  {$i = 'bojonegorokab'}
+            82  {$i = 'bondowosokab'}
+            83  {$i = 'gresikkab'}
+            84  {$i = 'jemberkab'}
+            85  {$i = 'jombangkab'}
+            86  {$i = 'kedirikab'}
+            87  {$i = 'lamongankab'}
+            88  {$i = 'lumajangkab'}
+            89  {$i = 'madiunkab'}
+            90  {$i = 'magetankab'}
+            91  {$i = 'malangkab'}
+            92  {$i = 'mojokertokab'}
+            93  {$i = 'nganjukkab'}
+            94  {$i = 'ngawikab'}
+            95  {$i = 'pacitankab'}
+            96  {$i = 'pamekasankab'}
+            97  {$i = 'pasuruankab'}
+            98  {$i = 'ponorogokab'}
+            99  {$i = 'probolinggokab'}
+            100 {$i = 'sampangkab'}
+            101 {$i = 'sidoarjokab'}
+            102 {$i = 'situbondokab'}
+            103 {$i = 'sumenepkab'}
+            104 {$i = 'trenggalekkab'}
+            105 {$i = 'tubankab'}
+            106 {$i = 'tulungagungkab'}
+            107 {$i = 'blitar'}
+            108 {$i = 'kediri'}
+            109 {$i = 'madiun'}
+            110 {$i = 'malang'}
+            111 {$i = 'mojokerto'}
+            112 {$i = 'pasuruan'}
+            113 {$i = 'probolinggo'}
+            114 {$i = 'surabaya'}
+            115 {$i = 'batu'}
+            116 {$i = 'acehprov'}
+            117 {$i = 'acehbaratkab'}
+            118 {$i = 'acehbesarkab'}
+            119 {$i = 'acehselatankab'}
+            120 {$i = 'acehsingkilkab'}
+            121 {$i = 'acehtengahkab'}
+            122 {$i = 'acehtenggarakab'}
+            123 {$i = 'acehtimurkab'}
+            124 {$i = 'acehutarakab'}
+            125 {$i = 'bireuenkab'}
+            126 {$i = 'pidiekab'}
+            127 {$i = 'simeuluekab'}
+            128 {$i = 'bandaaceh'}
+            129 {$i = 'sabang'}
+            130 {$i = 'langsa'}
+            131 {$i = 'lhokseumawe'}
+            132 {$i = 'naganrayakab'}
+            133 {$i = 'acehjayakab'}
+            134 {$i = 'acehbaratdayakab'}
+            135 {$i = 'gayolueskab'}
+            136 {$i = 'acehtamiangkab'}
+            137 {$i = 'benermeriahkab'}
+            138 {$i = 'subulussalam'}
+            139 {$i = 'pidiejayakab'}
+            141 {$i = 'sumutprov'}
+            142 {$i = 'asahankab'}
+            143 {$i = 'dairikab'}
+            144 {$i = 'deliserdangkab'}
+            145 {$i = 'tanahkarokab'}
+            146 {$i = 'labuhanbatukab'}
+            147 {$i = 'langkatkab'}
+            148 {$i = 'mandailingnatalkab'}
+            149 {$i = 'niaskab'}
+            150 {$i = 'simalungunkab'}
+            151 {$i = 'tapanuliselatankab'}
+            152 {$i = 'tapanulitengahkab'}
+            153 {$i = 'tapanuliutarakab'}
+            154 {$i = 'tobakab'}
+            155 {$i = 'binjai'}
+            156 {$i = 'medan'}
+            157 {$i = 'pematangsiantar'}
+            158 {$i = 'sibolga'}
+            159 {$i = 'tanjungbalai'}
+            160 {$i = 'tebingtinggi'}
+            161 {$i = 'padangsidempuan'}
+            162 {$i = 'pakpakbharatkab'}
+            163 {$i = 'niasselatankab'}
+            164 {$i = 'humbanghasundutankab'}
+            165 {$i = 'serdangbedagaikab'}
+            166 {$i = 'samosirkab'}
+            167 {$i = 'batubarakab'}
+            173 {$i = 'padanglawaskab'}
+            174 {$i = 'padanglawasutarakab'}
+            175 {$i = 'labuhanbatuutarakab'}
+            176 {$i = 'labuhanbatuselatankab'}
+            177 {$i = 'niasutarakab'}
+            178 {$i = 'niasbaratkab'}
+            179 {$i = 'gunungsitoli'}
+            180 {$i = 'sumbarprov'}
+            181 {$i = 'limapuluhkotakab'}
+            182 {$i = 'agamkab'}
+            183 {$i = 'kepulauanmentawaikab'}
+            184 {$i = 'padangpariamankab'}
+            185 {$i = 'pasamankab'}
+            186 {$i = 'pesisirselatankab'}
+            187 {$i = 'sijunjungkab'}
+            188 {$i = 'solokkab'}
+            189 {$i = 'tanahdatarkab'}
+            190 {$i = 'bukittinggi'}
+            191 {$i = 'padangpanjang'}
+            192 {$i = 'padang'}
+            193 {$i = 'payakumbuh'}
+            194 {$i = 'sawahlunto'}
+            195 {$i = 'solok'}
+            196 {$i = 'pariaman'}
+            197 {$i = 'pasamanbaratkab'}
+            198 {$i = 'dharmasrayakab'}
+            199 {$i = 'solokselatankab'}
+            202 {$i = 'riauprov'}
+            203 {$i = 'bengkaliskab'}
+            204 {$i = 'indragirihilirkab'}
+            205 {$i = 'indragirihulukab'}
+            206 {$i = 'kamparkab'}
+            207 {$i = 'kuantansingingikab'}
+            208 {$i = 'pelalawankab'}
+            209 {$i = 'rokanhilirkab'}
+            210 {$i = 'rokanhulukab'}
+            211 {$i = 'siakkab'}
+            212 {$i = 'dumai'}
+            213 {$i = 'pekanbaru'}
+            215 {$i = 'kepulauanmerantikab'}
+            216 {$i = 'jambiprov'}
+            217 {$i = 'batangharikab'}
+            218 {$i = 'bungokab'}
+            219 {$i = 'kerincikab'}
+            220 {$i = 'meranginkab'}
+            221 {$i = 'muarojambikab'}
+            222 {$i = 'sarolangunkab'}
+            223 {$i = 'tanjungjabungbaratkab'}
+            224 {$i = 'tanjungjabungtimurkab'}
+            225 {$i = 'tebokab'}
+            226 {$i = 'jambi'}
+            228 {$i = 'sungaipenuh'}
+            229 {$i = 'sumselprov'}
+            230 {$i = 'lahatkab'}
+            231 {$i = 'musibanyuasinkab'}
+            232 {$i = 'musirawaskab'}
+            233 {$i = 'muaraenimkab'}
+            234 {$i = 'ogankomeringilirkab'}
+            235 {$i = 'ogankomeringulukab'}
+            236 {$i = 'palembang'}
+            237 {$i = 'pagaralam'}
+            238 {$i = 'lubuklinggau'}
+            239 {$i = 'prabumulih'}
+            240 {$i = 'banyuasinkab'}
+            241 {$i = 'oganilirkab'}
+            242 {$i = 'okutimurkab'}
+            243 {$i = 'okuselatankab'}
+            244 {$i = 'empatlawangkab'}
+            246 {$i = 'lampungprov'}
+            247 {$i = 'lampungbaratkab'}
+            248 {$i = 'lampungselatankab'}
+            249 {$i = 'lampungtengahkab'}
+            250 {$i = 'lampungutarakab'}
+            251 {$i = 'lampungtimurkab'}
+            252 {$i = 'tanggamuskab'}
+            253 {$i = 'tulangbawangkab'}
+            254 {$i = 'waykanankab'}
+            255 {$i = 'bandarlampung'}
+            256 {$i = 'metro'}
+            257 {$i = 'pesawarankab'}
+            258 {$i = 'pringsewukab'}
+            259 {$i = 'mesujikab'}
+            260 {$i = 'tulangbawangbaratkab'}
+            261 {$i = 'kalbarprov'}
+            262 {$i = 'bengkayangkab'}
+            263 {$i = 'landakkab'}
+            264 {$i = 'kapuashulukab'}
+            265 {$i = 'ketapangkab'}
+            267 {$i = 'sambaskab'}
+            268 {$i = 'sanggaukab'}
+            269 {$i = 'sintangkab'}
+            270 {$i = 'pontianak'}
+            271 {$i = 'singkawang'}
+            272 {$i = 'sekadaukab'}
+            273 {$i = 'melawikab'}
+            274 {$i = 'kayongutarakab'}
+            275 {$i = 'kuburayakab'}
+            276 {$i = 'kaltengprov'}
+            277 {$i = 'baritoselatankab'}
+            278 {$i = 'baritoutarakab'}
+            279 {$i = 'kapuaskab'}
+            280 {$i = 'kotawaringinbaratkab'}
+            281 {$i = 'kotawaringintimurkab'}
+            282 {$i = 'palangkaraya'}
+            283 {$i = 'baritotimurkab'}
+            284 {$i = 'murungrayakab'}
+            285 {$i = 'pulangpisaukab'}
+            286 {$i = 'gunungmaskab'}
+            287 {$i = 'lamandaukab'}
+            288 {$i = 'sukamarakab'}
+            289 {$i = 'katingankab'}
+            290 {$i = 'seruyankab'}
+            291 {$i = 'kalselprov'}
+            292 {$i = 'banjarkab'}
+            293 {$i = 'baritokualakab'}
+            294 {$i = 'hulusungaiselatankab'}
+            295 {$i = 'hulusungaitengahkab'}
+            296 {$i = 'hulusungaiutarakab'}
+            297 {$i = 'kotabarukab'}
+            298 {$i = 'tabalongkab'}
+            299 {$i = 'tanahlautkab'}
+            300 {$i = 'tapinkab'}
+            301 {$i = 'banjarbaru'}
+            302 {$i = 'banjarmasin'}
+            303 {$i = 'balangankab'}
+            304 {$i = 'tanahbumbukab'}
+            307 {$i = 'kaltimprov'}
+            308 {$i = 'beraukab'}
+            309 {$i = 'kutaikartanegarakab'}
+            310 {$i = 'kutaibaratkab'}
+            311 {$i = 'kutaitimurkab'}
+            312 {$i = 'pasirkab'}
+            313 {$i = 'balikpapan'}
+            314 {$i = 'bontang'}
+            315 {$i = 'samarinda'}
+            316 {$i = 'penajampaserutarakab'}
+            318 {$i = 'sulutprov'}
+            319 {$i = 'bolaangmongondowkab'}
+            320 {$i = 'minahasakab'}
+            321 {$i = 'sangihekab'}
+            322 {$i = 'bitung'}
+            323 {$i = 'manado'}
+            324 {$i = 'kepulauantalaudkab'}
+            325 {$i = 'minahasaselatankab'}
+            326 {$i = 'tomohon'}
+            327 {$i = 'minahasautarakab'}
+            328 {$i = 'kotamubagu'}
+            329 {$i = 'bolaangmongondowutarakab'}
+            330 {$i = 'kepsiautagulandangbiarokab'}
+            331 {$i = 'minahasatenggarakab'}
+            332 {$i = 'bolaangmongondowtimurkab'}
+            333 {$i = 'bolaangmongondowselatankab'}
+            334 {$i = 'sultengprov'}
+            335 {$i = 'banggaikab'}
+            336 {$i = 'banggaikepulauankab'}
+            337 {$i = 'buolkab'}
+            338 {$i = 'toli-tolikab'}
+            339 {$i = 'donggalakab'}
+            340 {$i = 'morowalikab'}
+            341 {$i = 'posokab'}
+            342 {$i = 'palu'}
+            343 {$i = 'parigimoutongkab'}
+            344 {$i = 'tojouna-unakab'}
+            345 {$i = 'sigikab'}
+            346 {$i = 'sulselprov'}
+            347 {$i = 'bantaengkab'}
+            348 {$i = 'barrukab'}
+            349 {$i = 'bonekab'}
+            350 {$i = 'bulukumbakab'}
+            351 {$i = 'enrekangkab'}
+            352 {$i = 'gowakab'}
+            353 {$i = 'jenepontokab'}
+            354 {$i = 'luwukab'}
+            355 {$i = 'luwuutarakab'}
+            356 {$i = 'maroskab'}
+            357 {$i = 'pangkajenekepulauankab'}
+            358 {$i = 'pinrangkab'}
+            359 {$i = 'kepulauanselayarkab'}
+            360 {$i = 'sidenrengrappangkab'}
+            361 {$i = 'sinjaikab'}
+            362 {$i = 'soppengkab'}
+            363 {$i = 'takalarkab'}
+            364 {$i = 'tanatorajakab'}
+            365 {$i = 'wajokab'}
+            366 {$i = 'pare-pare'}
+            367 {$i = 'makassar'}
+            368 {$i = 'palopo'}
+            369 {$i = 'luwutimurkab'}
+            370 {$i = 'torajautarakab'}
+            371 {$i = 'sultraprov'}
+            372 {$i = 'butonkab'}
+            373 {$i = 'konawekab'}
+            374 {$i = 'kolakakab'}
+            375 {$i = 'munakab'}
+            376 {$i = 'kendari'}
+            377 {$i = 'bau-bau'}
+            378 {$i = 'konaweselatankab'}
+            379 {$i = 'bombanakab'}
+            380 {$i = 'wakatobikab'}
+            381 {$i = 'kolakautarakab'}
+            382 {$i = 'konaweutarakab'}
+            383 {$i = 'butonutarakab'}
+            384 {$i = 'malukuprov'}
+            385 {$i = 'kepulauantanimbarkab'}
+            386 {$i = 'malukutengahkab'}
+            387 {$i = 'malukutenggarakab'}
+            388 {$i = 'burukab'}
+            389 {$i = 'ambon'}
+            390 {$i = 'serambagianbaratkab'}
+            391 {$i = 'serambagiantimurkab'}
+            392 {$i = 'kepulauanarukab'}
+            393 {$i = 'tual'}
+            394 {$i = 'malukubaratdayakab'}
+            395 {$i = 'buruselatankab'}
+            396 {$i = 'baliprov'}
+            397 {$i = 'badungkab'}
+            398 {$i = 'banglikab'}
+            399 {$i = 'bulelengkab'}
+            400 {$i = 'gianyarkab'}
+            401 {$i = 'jembranakab'}
+            402 {$i = 'karangasemkab'}
+            403 {$i = 'klungkungkab'}
+            404 {$i = 'tabanankab'}
+            405 {$i = 'denpasar'}
+            407 {$i = 'ntbprov'}
+            408 {$i = 'bimakab'}
+            409 {$i = 'dompukab'}
+            410 {$i = 'lombokbaratkab'}
+            411 {$i = 'lomboktengahkab'}
+            412 {$i = 'lomboktimurkab'}
+            413 {$i = 'sumbawakab'}
+            414 {$i = 'mataram'}
+            415 {$i = 'bima'}
+            416 {$i = 'sumbawabaratkab'}
+            417 {$i = 'lombokutarakab'}
+            418 {$i = 'nttprov'}
+            419 {$i = 'alorkab'}
+            420 {$i = 'belukab'}
+            421 {$i = 'endekab'}
+            422 {$i = 'florestimurkab'}
+            423 {$i = 'kupangkab'}
+            424 {$i = 'lembatakab'}
+            425 {$i = 'manggaraikab'}
+            426 {$i = 'ngadakab'}
+            427 {$i = 'sikkakab'}
+            428 {$i = 'sumbabaratkab'}
+            429 {$i = 'sumbatimurkab'}
+            430 {$i = 'timortengahselatankab'}
+            431 {$i = 'timortengahutarakab'}
+            432 {$i = 'kupang'}
+            433 {$i = 'rotendaokab'}
+            434 {$i = 'manggaraibaratkab'}
+            435 {$i = 'nagekeokab'}
+            436 {$i = 'sumbabaratdayakab'}
+            437 {$i = 'sumbatengahkab'}
+            438 {$i = 'manggaraitimurkab'}
+            439 {$i = 'saburaijuakab'}
+            440 {$i = 'papuaprov'}
+            441 {$i = 'biaknumforkab'}
+            442 {$i = 'jayapurakab'}
+            449 {$i = 'kepulauanyapenkab'}
+            450 {$i = 'jayapura'}
+            451 {$i = 'sarmikab'}
+            452 {$i = 'keeromkab'}
+            459 {$i = 'waropenkab'}
+            460 {$i = 'supiorikab'}
+            461 {$i = 'mamberamorayakab'}
+            468 {$i = 'puncakkab'}
+            471 {$i = 'bengkuluprov'}
+            472 {$i = 'bengkuluselatankab'}
+            473 {$i = 'bengkuluutarakab'}
+            474 {$i = 'rejanglebongkab'}
+            475 {$i = 'bengkulu'}
+            476 {$i = 'kaurkab'}
+            477 {$i = 'selumakab'}
+            478 {$i = 'muko-mukokab'}
+            479 {$i = 'lebongkab'}
+            480 {$i = 'kepahiangkab'}
+            481 {$i = 'bengkulutengahkab'}
+            482 {$i = 'malutprov'}
+            483 {$i = 'halmaheratengahkab'}
+            484 {$i = 'halmaherabaratkab'}
+            485 {$i = 'ternate'}
+            486 {$i = 'halmaheratimurkab'}
+            487 {$i = 'tidorekepulauan'}
+            488 {$i = 'kepulauansulakab'}
+            489 {$i = 'halmaheraselatankab'}
+            490 {$i = 'halmaherautarakab'}
+            491 {$i = 'morotaikab'}
+            492 {$i = 'bantenprov'}
+            493 {$i = 'lebakkab'}
+            494 {$i = 'pandeglangkab'}
+            495 {$i = 'serangkab'}
+            496 {$i = 'tangerangkab'}
+            497 {$i = 'cilegon'}
+            498 {$i = 'tangerang'}
+            499 {$i = 'serang'}
+            500 {$i = 'tangerangselatan'}
+            501 {$i = 'babelprov'}
+            502 {$i = 'bangkakab'}
+            503 {$i = 'belitungkab'}
+            504 {$i = 'pangkalpinang'}
+            505 {$i = 'bangkaselatankab'}
+            506 {$i = 'bangkatengahkab'}
+            507 {$i = 'bangkabaratkab'}
+            508 {$i = 'belitungtimurkab'}
+            510 {$i = 'gorontaloprov'}
+            511 {$i = 'boalemokab'}
+            512 {$i = 'gorontalokab'}
+            513 {$i = 'gorontalo'}
+            514 {$i = 'pohuwatokab'}
+            515 {$i = 'bonebolangokab'}
+            516 {$i = 'gorontaloutarakab'}
+            519 {$i = 'kepriprov'}
+            520 {$i = 'bintankab'}
+            521 {$i = 'natunakab'}
+            522 {$i = 'karimunkab'}
+            523 {$i = 'batam'}
+            524 {$i = 'tanjungpinang'}
+            525 {$i = 'linggakab'}
+            527 {$i = 'kepulauananambaskab'}
+            528 {$i = 'papuabaratprov'}
+            530 {$i = 'manokwarikab'}
+            531 {$i = 'fak-fakkab'}
+            535 {$i = 'telukbintunikab'}
+            536 {$i = 'telukwondamakab'}
+            537 {$i = 'kaimanakab'}
+            540 {$i = 'sulbarprov'}
+            541 {$i = 'majenekab'}
+            542 {$i = 'mamujukab'}
+            543 {$i = 'polewalimandarkab'}
+            544 {$i = 'mamasakab'}
+            545 {$i = 'pasangkayukab'}
+            546 {$i = 'kaltaraprov'}
+            547 {$i = 'bulungankab'}
+            548 {$i = 'malinaukab'}
+            549 {$i = 'nunukankab'}
+            550 {$i = 'tanatidungkab'}
+            551 {$i = 'tarakan'}
+            552 {$i = 'pangandarankab'}
+            553 {$i = 'mempawahkab'}
+            554 {$i = 'mahakamulukab'}
+            555 {$i = 'pesisirbaratkab'}
+            556 {$i = 'pulautaliabukab'}
+            557 {$i = 'malakakab'}
+            558 {$i = 'manokwariselatankab'}
+            559 {$i = 'pegununganarfakkab'}
+            560 {$i = 'mamujutengahkab'}
+            561 {$i = 'banggailautkab'}
+            562 {$i = 'morowaliutarakab'}
+            563 {$i = 'butonselatankab'}
+            564 {$i = 'butontengahkab'}
+            565 {$i = 'kolakatimurkab'}
+            566 {$i = 'konawekepulauankab'}
+            567 {$i = 'munabaratkab'}
+            569 {$i = 'musirawasutarakab'}
+            570 {$i = 'penukalabablematangilirkab'}
+            588 {$i = 'papuaselatanprov'}
+            589 {$i = 'papuatengahprov'}
+            590 {$i = 'papuapegununganprov'}
+            591 {$i = 'meraukekab'}
+            592 {$i = 'bovendigoelkab'}
+            593 {$i = 'mappikab'}
+            594 {$i = 'asmatkab'}
+            595 {$i = 'nabirekab'}
+            596 {$i = 'puncakjayakab'}
+            597 {$i = 'paniaikab'}
+            598 {$i = 'mimikakab'}
+            599 {$i = 'dogiyaikab'}
+            600 {$i = 'intanjayakab'}
+            601 {$i = 'deiyaikab'}
+            602 {$i = 'jayawijayakab'}
+            603 {$i = 'pegununganbintangkab'}
+            604 {$i = 'yahukimokab'}
+            605 {$i = 'tolikarakab'}
+            606 {$i = 'mamberamotengahkab'}
+            607 {$i = 'yalimokab'}
+            608 {$i = 'lannyjayakab'}
+            609 {$i = 'ndugakab'}
+            610 {$i = 'papuabaratdayaprov'}
+            611 {$i = 'sorongkab'}
+            612 {$i = 'sorongselatankab'}
+            613 {$i = 'rajaampatkab'}
+            614 {$i = 'tambrauwkab'}
+            615 {$i = 'maybratkab'}
+            616 {$i = 'sorong'}
+            0   {Start-Menu}
+        }
+    }
+    until ($null -ne $i)
+
+    Show-id_url
+
+    $configjs = @"
+var config = {
+	tahun_anggaran : "$tahun_anggaran", // Tahun anggaran
+	id_daerah : "$id_daerah", // ID daerah bisa didapat dengan ketikan kode drakor di console log SIPD Merah atau cek value dari pilihan pemda di halaman login SIPD Biru
+	sipd_url : "https://$i.sipd.kemendagri.go.id/", // alamat sipd sesuai kabupaten kota masing-masing
+	jml_rincian : 500, // maksimal jumlah rincian yang dikirim ke server lokal dalam satu request
+	realisasi : false, // get realisasi rekening
+	url_server_lokal : "https://xxxxxxxxxxxxxxx/wp-admin/admin-ajax.php", // url server lokal
+	api_key : "xxxxxxxxxxxxxxxxxxx", // api key server lokal disesuaikan dengan api dari WP plugin
+	sipd_private : false, // koneksi ke plugin SIPD private
+	tapd : [{
+		nama: "nama tim tapd 1",
+		nip: "12343464575656",
+		jabatan: "Sekda",
+	},{
+		nama: "nama tim tapd 2",
+		nip: "12343464575652",
+		jabatan: "Kepala Bappeda",
+	},{
+		nama: "nama tim tapd 3",
+		nip: "12343464575653",
+		jabatan: "Kepala BPPKAD",
+	}], // nama tim TAPD dalam bentuk array dan object maksimal 8 orang sesuai format SIPD
+	tgl_rka : "false", // pilihan nilai default "auto"=auto generate, false=fitur dimatikan, "isi tanggal sendiri"=tanggal ini akan muncul sebagai nilai default dan bisa diedit
+	nama_daerah : "Magetan", // akan tampil sebelum tgl_rka
+	kepala_daerah : "Bapak / Ibu xxx xx.xx", // akan tampil di lampiran perda
+	replace_logo : false, // jika nilai true maka akan mengganti logo di SIPD dengan logo di file img/logo.png
+	no_perkada : 'xx/xx/xx/xx', // settingan no_perkada ini untuk edit nomor, tanggal dan keterangan perkada, setting false atau kosongkan value untuk menonaktifkan
+	tampil_edit_hapus_rinci : true // Menampilkan tombol edit dan hapus di halaman Detail Rincian sub kegiatan
+};
+"@
+
+    try {
+        Set-Content -Value $configjs -LiteralPath "$drive\$sipd\config.js" -Force -Encoding UTF8
+    }
+    catch {
+        $configjs | Out-File -Encoding utf8 -LiteralPath "$drive\$sipd\config.js" -Force
+    }
 }
-else {
-    Start-Git_Pull_Sipd
-}
+
+Start-Git_Pull_Sipd
 
 Start-Menu
