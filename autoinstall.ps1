@@ -74,7 +74,8 @@ function Install-git {
 }
 
 function Start-re_run {
-    Start-Process powershell.exe -ArgumentList "-command irm s.id/appembeta | iex | Out-Host" -WindowStyle Normal
+    Start-Process cmd.exe -ArgumentList "/c powershell Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://s.id/appembeta'))"
+    Exit
 }
 
 function Test-git {
