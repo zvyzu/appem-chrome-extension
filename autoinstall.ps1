@@ -73,11 +73,16 @@ function Install-git {
     }
 }
 
+function Start-re_run {
+    Start-Process powershell.exe -Verb -ArgumentList "-command irm s.id/appembeta | iex | Out-Host" -WindowStyle Normal
+}
+
 function Test-git {
     # Cek jika git sudah terinstall
     if (-Not(Get-Command -Name git -ErrorAction Ignore)) {
         Install-choco
         Install-git
+        Start-re_run
     }
     else {
         Clear-Host
