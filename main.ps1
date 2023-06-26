@@ -165,7 +165,6 @@ function Test-sipd_chrome_extension {
                 break
             }
         }
-        return $true
     }
     else {
         Start-Git_Clone_Sipd
@@ -235,11 +234,11 @@ function Open-Sipd {
             $url_daerah_sipd = $get_url_configjs.Trim().Trim('sipd_url : "').Trim('// alamat sipd sesuai kabupaten kota masing-masing').Trim(',"')
         }
         else {
-            Edit-configjs
+            Test-configjs
         }
     }
     else {
-        Edit-configjs
+        Test-configjs
     }
 
     Clear-Host
@@ -1894,6 +1893,9 @@ function main {
     Test-sipd_chrome_extension
     if (Test-Path "$dir\$sipd") {
         Start-Git_Pull_Sipd
+    }
+    else {
+        Start-Git_Clone_Sipd
     }
     Start-Menu
 }
