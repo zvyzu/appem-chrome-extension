@@ -55,21 +55,14 @@ function Install-git {
     }
 }
 
-function Start-re_run {
-    Start-Process cmd.exe -ArgumentList "/c powershell Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://s.id/appembeta'))"
-    Exit
-}
-
 function Test-git {
     # Cek jika git sudah terinstall
     if (-Not(Get-Command -Name git -ErrorAction Ignore)) {
         Install-git
-        Start-re_run
     }
     else {
         Clear-Host
         Write-Host ' OK'
-        # choco outdated
     }
 }
 
