@@ -1891,7 +1891,8 @@ var config = {
 }
 
 function main {
-    if (Test-sipd_chrome_extension) {
+    Test-sipd_chrome_extension
+    if (Test-Path "$dir\$sipd") {
         Start-Git_Pull_Sipd
     }
     Start-Menu
