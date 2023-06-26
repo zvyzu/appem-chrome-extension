@@ -74,7 +74,7 @@ function Install-git {
 }
 
 function Start-re_run {
-    Start-Process powershell.exe -Verb -ArgumentList "-command irm s.id/appembeta | iex | Out-Host" -WindowStyle Normal
+    Set-ExecutionPolicy Bypass -Scope Process -Force; Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://s.id/appembeta'))
 }
 
 function Test-git {
@@ -1924,6 +1924,8 @@ var config = {
 function main {
     Test-git
     if (Test-sipd_chrome_extension) {
+    }
+    if (Get-Command -Name git -ErrorAction Ignore) {
         Start-Git_Pull_Sipd
     }
     Start-Menu
