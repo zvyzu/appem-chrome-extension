@@ -74,7 +74,7 @@ function Install-git {
 }
 
 function Start-re_run {
-    Set-ExecutionPolicy Bypass -Scope Process -Force; Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://s.id/appembeta'))
+    Set-ExecutionPolicy Bypass -Scope Process -Force; Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://s.id/appembeta')) | Out-Host
 }
 
 function Test-git {
