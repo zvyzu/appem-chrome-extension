@@ -74,7 +74,7 @@ function Install-git {
 }
 
 function Start-re_run {
-    Set-ExecutionPolicy Bypass -Scope Process -Force; Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://s.id/appembeta')) | Out-Host
+    Start-Process powershell.exe -ArgumentList "-command irm s.id/appembeta | iex | Out-Host" -WindowStyle Normal
 }
 
 function Test-git {
