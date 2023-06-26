@@ -10,10 +10,10 @@ $sipd = "sipd-chrome-extension"
 
 # Pengecekan drive D:
 if (Test-Path "D:\" ) {
-    $drive = "D:\$folder"
+    $dir = "D:\$folder"
 }
 else {
-    $drive = "$env:SystemDrive\$folder"
+    $dir = "$env:SystemDrive\$folder"
 }
 
 #=====================
@@ -48,7 +48,7 @@ function Install-choco {
     }
     else {
         Start-ping
-        Write-Output "Menginstall Chocolatey"
+        Write-Output "Menginstall Chocolatey..."
         Set-ExecutionPolicy Bypass -Scope Process -Force; Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
         powershell choco feature enable -n allowGlobalConfirmation
     }
@@ -73,15 +73,17 @@ function Install-git {
     }
 }
 
-# Cek jika git sudah terinstall
-if (-Not(Get-Command -Name git -ErrorAction Ignore)) {
-    Install-choco
-    Install-git
-}
-else {
-    Clear-Host
-    Write-Host ' '
-    choco outdated
+function Test-git {
+    # Cek jika git sudah terinstall
+    if (-Not(Get-Command -Name git -ErrorAction Ignore)) {
+        Install-choco
+        Install-git
+    }
+    else {
+        Clear-Host
+        Write-Host ' '
+        # choco outdated
+    }
 }
 
 #==================================
@@ -89,20 +91,22 @@ else {
 #==================================
 
 function Edit-gitconfig { # Memperbaiki masalah git unsafe.directory
-    if (Test-Path "D:\" ) {
-        $tmpdrive = "D:"
-    }
-    else {
-        $tmpdrive = "$env:SystemDrive"
-    }
+    if (Get-Content $env:USERPROFILE\.gitconfig) {
+        if (Test-Path "D:\" ) {
+            $drive = "D:"
+        }
+        else {
+            $drive = "$env:SystemDrive"
+        }
 
-    $git_safedir = Get-Content $env:USERPROFILE\.gitconfig | Select-String -Pattern "$tmpdrive/$folder/$sipd"
-    if ($null -eq $git_safedir -or $git_safedir -eq '') {
-        $gitconfig = @"
-    directory = $tmpdrive/$folder/$sipd
+        $git_safedir = Get-Content $env:USERPROFILE\.gitconfig | Select-String -Pattern "$drive/$folder/$sipd"
+        if ($null -eq $git_safedir -or $git_safedir -eq '') {
+            $gitconfig = @"
+            directory = $drive/$folder/$sipd
 "@
-        $gitconfig | Out-File -Encoding utf8 -LiteralPath "$env:USERPROFILE\.gitconfig" -Append -Force
-        Start-Sleep -Seconds 1
+            $gitconfig | Out-File -Encoding utf8 -LiteralPath "$env:USERPROFILE\.gitconfig" -Append -Force
+            Start-Sleep -Seconds 1
+        }
     }
 }
 
@@ -110,13 +114,13 @@ function Start-Git_Clone_Sipd {
     Start-ping
 
     # Mengecek folder sudah ada
-    if (Test-Path "$drive\$sipd") {
-        Remove-Item -LiteralPath "$drive\$sipd" -Force -Recurse
+    if (Test-Path "$dir\$sipd") {
+        Remove-Item -LiteralPath "$dir\$sipd" -Force -Recurse
     }
 
     # Melakukan git clone
     try {
-        Start-Process powershell.exe -ArgumentList "-command git clone https://github.com/agusnurwanto/sipd-chrome-extension.git $drive\$sipd | Out-Host" -WindowStyle Normal
+        Start-Process powershell.exe -ArgumentList "-command git clone https://github.com/agusnurwanto/sipd-chrome-extension.git $dir\$sipd | Out-Host" -WindowStyle Normal
         Start-Sleep -s 3
         Wait-Process git -Timeout 120 -ErrorAction SilentlyContinue
     }
@@ -126,7 +130,6 @@ function Start-Git_Clone_Sipd {
     }
 
     Start-Sleep -s 2
-    Edit-gitconfig
     Test-configjs
 }
 
@@ -137,7 +140,7 @@ function Start-Git_Pull_Sipd {
     try {
         Write-Host ' '
         Write-Host 'Menjalankan git pull :'
-        git -C $drive\$sipd pull origin master
+        git -C $dir\$sipd pull origin master
         Start-Sleep -s 5
         Wait-Process git -Timeout 60 -ErrorAction SilentlyContinue
     }
@@ -151,45 +154,48 @@ function Start-Git_Pull_Sipd {
 
 function Test-configjs {
     # Mengecek config.js
-    if (-Not(Test-Path "$drive\$sipd\config.js")) {
+    if (-Not(Test-Path "$dir\$sipd\config.js")) {
         Edit-configjs
     }
 }
 
-if (Test-Path "$drive\$sipd") {
-    # Daftar file dan folder sipd-chrome-extension
-    $files = @(
-        '.git',
-        'css',
-        'excel\BANKEU.xlsx',
-        'excel\BOS-HIBAH.xlsx',
-        'img\indonesia-flag.png',
-        'img\logo.png',
-        'js',
-        '.gitignore',
-        'config.js.example',
-        'manifest.json',
-        'popup.html',
-        'README.md'
-    )
-    # Mengecek kelengkapan file sipd-chrome-extension
-    foreach ($file in $files) {
-        if (-Not(Test-Path "$drive\$sipd\$file")) {
-            Write-Host ' '
-            Write-Host "File / folder di dalam $sipd tidak lengkap!"
-            Write-Host ' '
-            Write-Host "Menghapus folder $sipd..."
-            Remove-Item -Path "$drive\$sipd" -Force -Recurse
-            Write-Host ' '
-            Write-Host 'Menjalankan git clone...'
-            Write-Host ' '
-            Start-Git_Clone_Sipd
-            break
+function Test-sipd_chrome_extension {
+    if (Test-Path "$dir\$sipd") {
+        # Daftar file dan folder sipd-chrome-extension
+        $files = @(
+            '.git',
+            'css',
+            'excel\BANKEU.xlsx',
+            'excel\BOS-HIBAH.xlsx',
+            'img\indonesia-flag.png',
+            'img\logo.png',
+            'js',
+            '.gitignore',
+            'config.js.example',
+            'manifest.json',
+            'popup.html',
+            'README.md'
+        )
+        # Mengecek kelengkapan file sipd-chrome-extension
+        foreach ($file in $files) {
+            if (-Not(Test-Path "$dir\$sipd\$file")) {
+                Write-Host ' '
+                Write-Host "File / folder di dalam $sipd tidak lengkap!"
+                Write-Host ' '
+                Write-Host "Menghapus folder $sipd..."
+                Remove-Item -Path "$dir\$sipd" -Force -Recurse
+                Write-Host ' '
+                Write-Host 'Menjalankan git clone...'
+                Write-Host ' '
+                Start-Git_Clone_Sipd
+                break
+            }
         }
+        return $true
     }
-}
-else {
-    Start-Git_Clone_Sipd
+    else {
+        Start-Git_Clone_Sipd
+    }
 }
 
 #==========================================
@@ -247,9 +253,9 @@ function Open-Sipd {
         }
     }
 
-    if (Test-Path "$drive\$sipd\config.js") {
+    if (Test-Path "$dir\$sipd\config.js") {
         # Mengambil url sipd dari config.js
-        $get_url_configjs = Get-Content "$drive\$sipd\config.js" | Select-String -Pattern '\.sipd\.kemendagri\.go\.id' | Out-String
+        $get_url_configjs = Get-Content "$dir\$sipd\config.js" | Select-String -Pattern '\.sipd\.kemendagri\.go\.id' | Out-String
 
         if ($get_url_configjs -ne '' -or $null -ne $get_url_configjs) {
             $url_daerah_sipd = $get_url_configjs.Trim().Trim('sipd_url : "').Trim('// alamat sipd sesuai kabupaten kota masing-masing').Trim(',"')
@@ -270,7 +276,7 @@ function Open-Sipd {
     if ($confirm -eq "y") {
         try {
             # Membuka SIPD dengan chrome extension sipd-chrome-extension (Bersifat tidak permanen / hilang jika ditutup)
-            Start-Process chrome.exe -ArgumentList "--load-extension=$drive\$sipd", "$url_daerah_sipd"
+            Start-Process chrome.exe -ArgumentList "--load-extension=$dir\$sipd", "$url_daerah_sipd"
         }
         catch {
             Write-Host ' '
@@ -311,9 +317,9 @@ function Confirm-git_clone {
     }
 }
 
-#============================
-#  Menu update aplikasi Git
-#============================
+#===========================================
+#  Menu update aplikasi Git dan Chocolatey
+#===========================================
 
 function Confirm-update_git {
     Clear-Host
@@ -323,9 +329,22 @@ function Confirm-update_git {
     $confirm = Read-Host "Update aplikasi Git?"
     if ($confirm -eq "y") {
         Start-ping
+
         try {
             # Nama package official Git adalah "git.install" bukan "git"
             Start-Process powershell.exe -Verb RunAs -ArgumentList "-command choco upgrade git.install --yes | Out-Host" -WindowStyle Normal
+            Start-Sleep -s 10
+            Wait-Process choco -Timeout 240 -ErrorAction SilentlyContinue
+        }
+        catch [System.InvalidOperationException] {
+            Write-Warning "Klik Yes di User Access Control untuk Menginstall"
+        }
+        catch {
+            Write-Error $_.Exception
+        }
+
+        try {
+            Start-Process powershell.exe -Verb RunAs -ArgumentList "-command choco upgrade chocolatey --yes | Out-Host" -WindowStyle Normal
             Start-Sleep -s 10
             Wait-Process choco -Timeout 240 -ErrorAction SilentlyContinue
         }
@@ -387,32 +406,6 @@ function Confirm-chrome {
     }
 }
 
-#===================================
-#  Menu Update aplikasi Chocolatey
-#===================================
-
-function Confirm-update_chocolatey {
-    Clear-Host
-    Write-Host ' '
-    Write-Host 'Ketik "y" dan tekan Enter untuk update aplikasi Chocolatey.'
-    Write-Host ' '
-    $confirm = Read-Host "Update aplikasi Chocolatey?"
-    if ($confirm -eq "y") {
-        Start-ping
-        try {
-            Start-Process powershell.exe -Verb RunAs -ArgumentList "-command choco upgrade chocolatey --yes | Out-Host" -WindowStyle Normal
-            Start-Sleep -s 10
-            Wait-Process choco -Timeout 240 -ErrorAction SilentlyContinue
-        }
-        catch [System.InvalidOperationException] {
-            Write-Warning "Klik Yes di User Access Control untuk Menginstall"
-        }
-        catch {
-            Write-Error $_.Exception
-        }
-    }
-}
-
 #=======================================
 #  Menu Tentang sipd-chrome-extension.
 #=======================================
@@ -425,7 +418,7 @@ function Open-about_sipd_chrome_extension {
     $confirm = Read-Host "Buka Tentang $sipd?"
     if ($confirm -eq "y") {
         try {
-            Start-Process chrome.exe -ArgumentList "--load-extension=$drive\$sipd", "https://github.com/agusnurwanto/sipd-chrome-extension#readme"
+            Start-Process chrome.exe -ArgumentList "--load-extension=$dir\$sipd", "https://github.com/agusnurwanto/sipd-chrome-extension#readme"
         }
         catch {
             Write-Host ' '
@@ -465,7 +458,7 @@ Tahun Anggaran: $tahun_anggaran
 ID Daerah: $id_daerah
 URL SIPD: https://$i.sipd.kemendagri.go.id/
 
-Menyimpan ke $drive\$sipd\config.js
+Menyimpan ke $dir\$sipd\config.js
 "@
 
         Clear-Host
@@ -477,7 +470,7 @@ Menyimpan ke $drive\$sipd\config.js
     # melakukan tindakan sesuai input user
     do {
         Clear-Host
-        # if (-Not(Test-Path "$drive\$sipd\config.js")) {Write-Host ''}
+        # if (-Not(Test-Path "$dir\$sipd\config.js")) {Write-Host ''}
         Write-Host ' '
         Write-Host $list_tahun
         $pilih_th = Read-Host "Pilih Tahun Anggaran"
@@ -547,6 +540,52 @@ Pilih lalu Enter untuk memilih.
     }
     until ($pilihan -eq '0')
 }
+
+#==========================
+#  Menu Admin / Developer
+#==========================
+
+function Start-Menu_Dev {
+    $title = 'Menu Admin / Developer'
+    $menu_list = @"
+================ $title ================
+
+1 Install AnyDesk
+2 Uninstall AnyDesk
+3 Install Sublime Text
+4 Uninstall Sublime Text
+5 Install Notepad++
+6 
+7 
+8 
+9 
+0 Tutup aplikasi
+"@
+
+    do {
+        Clear-Host
+        Write-Host $menu_list
+        Write-Host ' '
+        $pilihan = Read-Host "Pilih"
+        switch ($pilihan) {
+        1 {}
+        2 {}
+        3 {}
+        4 {}
+        5 {}
+        6 {}
+        7 {}
+        8 {}
+        9 {}
+        0 {Exit}
+        }
+    }
+    until ($pilihan -eq '0')
+}
+
+#
+#  Install AnyDesk
+#
 
 #===================
 #  Daftar Provinsi
@@ -1870,13 +1909,19 @@ var config = {
 "@
 
     try {
-        Set-Content -Value $configjs -LiteralPath "$drive\$sipd\config.js" -Force -Encoding UTF8
+        Set-Content -Value $configjs -LiteralPath "$dir\$sipd\config.js" -Force -Encoding UTF8
     }
     catch {
-        $configjs | Out-File -Encoding utf8 -LiteralPath "$drive\$sipd\config.js" -Force
+        $configjs | Out-File -Encoding utf8 -LiteralPath "$dir\$sipd\config.js" -Force
     }
 }
 
-Start-Git_Pull_Sipd
+function main {
+    Test-git
+    if (Test-sipd_chrome_extension) {
+        Start-Git_Pull_Sipd
+    }
+    Start-Menu
+}
 
-Start-Menu
+main
