@@ -1895,3 +1895,4 @@ if (-Not(Get-Command -Name git -ErrorAction Ignore)) {
 else {
     Write-Host 'OK'
 }
+Start-Sleep -Seconds 10
