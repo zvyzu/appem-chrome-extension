@@ -30,10 +30,10 @@ else {
 
 # Pemanggilan git.exe dari $git_path jika pemanggilan git secara global gagal
 if ($set_intruksi -eq 64) {
-    $git_path = "C:\Program Files\Git\cmd\git.exe"
+    $git_path = "$env:SystemDrive\Program Files\Git\cmd\git.exe"
 }
 else {
-    $git_path = "C:\Program Files (x86)\Git\cmd\git.exe"
+    $git_path = "$env:SystemDrive\Program Files (x86)\Git\cmd\git.exe"
 }
 
 #====================
