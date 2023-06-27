@@ -60,16 +60,12 @@ function Test-git {
     if (-Not(Get-Command -Name git -ErrorAction Ignore)) {
         Install-git
     }
-    else {
-        Clear-Host
-        Write-Host ' OK'
-    }
 }
 
 function main {
     Test-choco
     Test-git
-    Start-Process cmd.exe -ArgumentList "/c powershell Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/evanvyz/appem-chrome-extension/beta/main.ps1'))" -WindowStyle Normal
+    Start-Process cmd.exe -ArgumentList "/c powershell Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/evanvyz/appem-chrome-extension/beta/main.ps1'))"
 }
 
 main
