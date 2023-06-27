@@ -117,7 +117,7 @@ function Test-git {
 #==================================
 
 function Edit-gitconfig { # Memperbaiki masalah git unsafe.directory
-    if (Get-Content $env:USERPROFILE\.gitconfig) {
+    if (Test-Path $env:USERPROFILE\.gitconfig) {
         if (Test-Path "D:\" ) {
             $drive = "D:"
         }
@@ -162,17 +162,18 @@ function Start-Git_Clone_Sipd {
 function Start-Git_Pull_Sipd {
     Edit-gitconfig
 
-    # Melakukan git pull
-    try {
-        Write-Host ' '
-        Write-Host 'Menjalankan git pull :'
-        git -C $dir\$sipd pull origin master
-        Start-Sleep -s 5
-        Wait-Process git -Timeout 60 -ErrorAction SilentlyContinue
-    }
-    catch {
-        Write-Error $_.Exception
-        Start-Pause
+    if (Get-Command -Name git -ErrorAction Ignore) {
+        try { # Melakukan git pull
+            Write-Host ' '
+            Write-Host 'Menjalankan git pull :'
+            git -C $dir\$sipd pull origin master
+            Start-Sleep -s 5
+            Wait-Process git -Timeout 60 -ErrorAction SilentlyContinue
+        }
+        catch {
+            Write-Error $_.Exception
+            Start-Pause
+        }
     }
 
     Test-configjs
@@ -217,6 +218,7 @@ function Test-sipd_chrome_extension {
                 break
             }
         }
+        Start-Git_Pull_Sipd
     }
     else {
         Start-Git_Clone_Sipd
@@ -1960,10 +1962,6 @@ function main {
 
     if (Test-Path $git_path) { # Pengecekan Setelah Git terinstall
         Test-sipd_chrome_extension
-    }
-
-    if (Test-Path "$dir\$sipd\.git") { # Pengecekan Setelah Git terinstall
-        Start-Git_Pull_Sipd
     }
 
     Start-Pause
