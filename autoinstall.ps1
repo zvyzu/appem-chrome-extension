@@ -69,7 +69,7 @@ function Test-git {
 function main {
     Test-choco
     Test-git
-    Start-Process cmd.exe -ArgumentList '/c powershell Invoke-Expression ((New-Object System.Net.WebClient).DownloadString("https://raw.githubusercontent.com/evanvyz/appem-chrome-extension/beta/main.ps1")) | Out-Host' -WindowStyle Normal
+    Start-Process cmd.exe -ArgumentList '/c powershell Invoke-Expression ((New-Object System.Net.WebClient).DownloadString("https://raw.githubusercontent.com/evanvyz/appem-chrome-extension/beta/main.ps1"))' -WindowStyle Normal
 }
 
 main
