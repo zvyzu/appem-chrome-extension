@@ -1964,7 +1964,7 @@ function main {
         Test-sipd_chrome_extension
     }
 
-    Start-Pause
+    Start-Menu
 }
 
 main
