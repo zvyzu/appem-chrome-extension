@@ -1889,15 +1889,9 @@ var config = {
     }
 }
 
-function main {
-    Test-sipd_chrome_extension
-    if (Test-Path "$dir\$sipd") {
-        Start-Git_Pull_Sipd
-    }
-    else {
-        Start-Git_Clone_Sipd
-    }
-    Start-Menu
+if (-Not(Get-Command -Name git -ErrorAction Ignore)) {
+    Write-Host 'NOT OK'
 }
-
-main
+else {
+    Write-Host 'OK'
+}
