@@ -16,11 +16,31 @@ else {
     $dir = "$env:SystemDrive\$folder"
 }
 
+# Pengecekan Arsitektur OS Windows 64bit / 32bit
+if ([Environment]::OSVersion.Version -lt (new-object 'Version' 8,1)) { # Pengecekan Windows 7
+    if ((Get-WmiObject win32_operatingsystem | Select-Object osarchitecture).osarchitecture -eq "64-bit") {
+        $set_intruksi = 64
+    }
+}
+else {
+    if ([Environment]::Is64BitProcess -eq [Environment]::Is64BitOperatingSystem) {
+        $set_intruksi = 64
+    }
+}
+
+# Pemanggilan git.exe dari $git_path jika pemanggilan git secara global gagal
+if ($set_intruksi -eq 64) {
+    $git_path = "C:\Program Files\Git\cmd\git.exe"
+}
+else {
+    $git_path = "C:\Program Files (x86)\Git\cmd\git.exe"
+}
+
 #====================
 #  Global Functions
 #====================
 
-function Start-Pause {
+function Start-Pause { # Jeda Script jika terjadi Error
     $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown');
 }
 
@@ -126,7 +146,7 @@ function Start-Git_Clone_Sipd {
 
     # Melakukan git clone
     try {
-        Start-Process -FilePath "C:\Program Files\Git\cmd\git.exe" -ArgumentList "clone https://github.com/agusnurwanto/sipd-chrome-extension.git $dir\$sipd"
+        Start-Process -FilePath $git_path -ArgumentList "clone https://github.com/agusnurwanto/sipd-chrome-extension.git $dir\$sipd"
         Start-Sleep -s 3
         Wait-Process git -Timeout 120 -ErrorAction SilentlyContinue
     }
@@ -197,7 +217,6 @@ function Test-sipd_chrome_extension {
                 break
             }
         }
-        return $true
     }
     else {
         Start-Git_Clone_Sipd
@@ -1935,9 +1954,18 @@ function main {
         Install-choco
     }
 
-    if (-Not(Get-Command -Name git -ErrorAction Ignore)) {
+    if (-Not(Get-Command -Name git -ErrorAction Ignore)) { # Pengecekan Git sudah terinstall
         Install-git
     }
+
+    if (Test-Path $git_path) { # Pengecekan Setelah Git terinstall
+        Test-sipd_chrome_extension
+    }
+
+    if (Test-Path "$dir\$sipd\.git") { # Pengecekan Setelah Git terinstall
+        Start-Git_Pull_Sipd
+    }
+
     Start-Pause
 }
 
