@@ -1960,15 +1960,27 @@ function main {
         Install-choco
     }
 
-    if (-Not(Get-Command -Name git -ErrorAction Ignore)) { # Pengecekan Git sudah terinstall
-        Install-git
-    }
-
-    if (Test-Path $git_path) { # Pengecekan Setelah Git terinstall
+    if (Get-Command -Name git -ErrorAction Ignore) { # Pengecekan Git sudah terinstall
         Test-sipd_chrome_extension
     }
+    else {
+        Install-git
 
-    Start-Menu
+        if (Test-Path $git_path) { # Pengecekan Setelah Git terinstall
+            Test-sipd_chrome_extension
+        }
+    }
+
+    if (Test-Path "$dir\$sipd") {
+        Start-Menu
+    }
+    else {
+        Write-Host 'sipd-chrome-extension belum terclone!'
+        Get-Command -Name git -ErrorAction Ignore
+        git.exe
+        Start-Process -FilePath $git_path
+        Start-Pause
+    }
 }
 
 main
