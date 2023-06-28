@@ -74,8 +74,6 @@ function Install-choco {
             powershell choco feature enable -n allowGlobalConfirmation
         }
         catch {
-            Write-Error $_.Exception
-            Start-Pause
         }
     }
 }
