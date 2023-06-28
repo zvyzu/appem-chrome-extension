@@ -21,7 +21,7 @@ if ([Environment]::OSVersion.Version -lt (new-object 'Version' 8,1)) { # Pengece
     Write-Host 'Silakan Upgrade / Update Windows Anda ke Windows 11 Atau Windows 10'
 }
 else {
-    $git_path = "$env:SystemDrive\Program Files\Git\cmd\git.exe"
+    $git_path = "$env:ProgramFiles\Git\cmd\git.exe"
 }
 
 #====================
