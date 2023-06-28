@@ -71,7 +71,8 @@ function Install-choco {
         Write-Output "Menginstall Chocolatey..."
 
         if(-Not([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] 'Administrator')) {
-            powershell.exe -Verb RunAs -ArgumentList "-command powershell -NoExit irm https://raw.githubusercontent.com/evanvyz/appem-chrome-extension/beta/autoinstall.ps1 | iex"
+            Start-Process powershell.exe -Verb RunAs -ArgumentList "-command powershell -NoExit irm https://raw.githubusercontent.com/evanvyz/appem-chrome-extension/beta/autoinstall.ps1 | iex | Out-Host"
+            Exit
         }
 
         try {
