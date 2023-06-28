@@ -132,6 +132,9 @@ function Edit-gitconfig { # Memperbaiki masalah git unsafe.directory
 function Start-Git_Clone_Sipd {
     Start-ping
 
+    Write-Host "OK"
+    Start-Pause
+
     # Mengecek folder sudah ada
     if (Test-Path "$dir\$sipd") {
         Remove-Item -LiteralPath "$dir\$sipd" -Force -Recurse
@@ -1976,6 +1979,7 @@ function main {
     }
     else {
         Write-Host 'sipd-chrome-extension belum terclone!'
+        Test-Path $git_path
         Get-Command -Name git -ErrorAction Ignore
         git.exe
         Start-Process -FilePath $git_path
