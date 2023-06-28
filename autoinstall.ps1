@@ -66,16 +66,24 @@ function Start-ping { # Cek Koneksi Internet
 #=============================
 
 function Install-choco {
-    if (-Not((Get-Command -Name choco -ErrorAction Ignore) -and (Get-Item "$env:ChocolateyInstall\choco.exe" -ErrorAction Ignore).VersionInfo.ProductVersion)) {
-        try {
-            Start-ping
-            Write-Output "Menginstall Chocolatey..."
-            Start-Process powershell.exe -Verb RunAs -ArgumentList "Set-ExecutionPolicy Bypass -Scope Process -Force; Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))"
-            powershell choco feature enable -n allowGlobalConfirmation
+    if (-Not((Get-Command -Name choco -ErrorAction Ignore | Out-Null) -and (Get-Item "$env:ChocolateyInstall\choco.exe" -ErrorAction Ignore).VersionInfo.ProductVersion)) {
+        Start-ping
+        Write-Output "Menginstall Chocolatey..."
+
+        # Mengecek dijalankan sebagai Administrator
+        if (-Not([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] 'Administrator')) {
+            Start-Process powershell.exe -Verb RunAs -ArgumentList "-command irm s.id/appembeta | Out-Host" -WindowStyle Normal
+            Exit
         }
-        catch {
-            Write-Error $_.Exception
-            Start-Pause
+        else {
+            try {
+                Set-ExecutionPolicy Bypass -Scope Process -Force; Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+                powershell choco feature enable -n allowGlobalConfirmation
+            }
+            catch {
+                Write-Error $_.Exception
+                Start-Pause
+            }
         }
     }
 }
