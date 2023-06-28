@@ -95,6 +95,11 @@ function Install-git {
         Write-Error $_.Exception
         Start-Pause
     }
+
+    if (-Not(Test-Path $git_path)) {
+        Start-Sleep -Seconds 5
+        Wait-Process choco -Timeout 240 -ErrorAction SilentlyContinue
+    }
 }
 
 function Test-git {
@@ -1973,6 +1978,11 @@ function main {
     }
     else {
         Install-git
+
+        if (-Not(Test-Path $git_path)) {
+            Start-Sleep -Seconds 5
+            Wait-Process choco -Timeout 240 -ErrorAction SilentlyContinue
+        }
 
         if (Test-Path $git_path) { # Pengecekan Setelah Git terinstall
             Test-sipd_chrome_extension
