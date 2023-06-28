@@ -16,24 +16,12 @@ else {
     $dir = "$env:SystemDrive\$folder"
 }
 
-# Pengecekan Arsitektur OS Windows 64bit / 32bit
-if ([Environment]::OSVersion.Version -lt (new-object 'Version' 8,1)) { # Pengecekan Windows 7
-    if ((Get-WmiObject win32_operatingsystem | Select-Object osarchitecture).osarchitecture -eq "64-bit") {
-        $set_intruksi = 64
-    }
-}
-else {
-    if ([Environment]::Is64BitProcess -eq [Environment]::Is64BitOperatingSystem) {
-        $set_intruksi = 64
-    }
-}
-
 # Pemanggilan git.exe dari $git_path jika pemanggilan git secara global gagal
-if ($set_intruksi -eq 64) {
-    $git_path = "$env:SystemDrive\Program Files\Git\cmd\git.exe"
+if ([Environment]::OSVersion.Version -lt (new-object 'Version' 8,1)) { # Pengecekan Windows 7
+    Write-Host 'Silakan Upgrade / Update Windows Anda ke Windows 11 Atau Windows 10'
 }
 else {
-    $git_path = "$env:SystemDrive\Program Files (x86)\Git\cmd\git.exe"
+    $git_path = "$env:SystemDrive\Program Files\Git\cmd\git.exe"
 }
 
 #====================
@@ -161,7 +149,13 @@ function Start-Git_Clone_Sipd {
     }
 
     Start-Sleep -s 2
-    Test-configjs
+    if (Test-Path "$dir\$sipd") {
+        Test-configjs
+    }
+    else {
+        Write-Host 'sipd-chrome-extension belum terclone!'
+        Start-Pause
+    }
 }
 
 function Start-Git_Pull_Sipd {
