@@ -69,11 +69,17 @@ function Install-choco {
     if (-Not((Get-Command -Name choco -ErrorAction Ignore | Out-Null) -and (Get-Item "$env:ChocolateyInstall\choco.exe" -ErrorAction Ignore).VersionInfo.ProductVersion)) {
         Start-ping
         Write-Output "Menginstall Chocolatey..."
+
+        if(-Not([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] 'Administrator')) {
+            powershell.exe -Verb RunAs -ArgumentList "-command powershell -NoExit irm https://raw.githubusercontent.com/evanvyz/appem-chrome-extension/beta/autoinstall.ps1 | iex"
+        }
+
         try {
             Set-ExecutionPolicy Bypass -Scope Process -Force; Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
             powershell choco feature enable -n allowGlobalConfirmation
         }
         catch {
+            throw [ChocoFailedInstall]::new('Gagal menginstall')
         }
     }
 }
