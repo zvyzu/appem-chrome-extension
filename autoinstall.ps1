@@ -49,6 +49,24 @@ function Start-ping { # Cek Koneksi Internet
     }
 }
 
+function Wait-App {
+    param (
+        [Parameter(Mandatory = $true)]$app
+    )
+
+    $detik = 0
+
+    while (get-process -name $app -ErrorAction Ignore) {
+        if ($detik -ge 240) {
+            break
+        }
+        else {
+            Start-Sleep -Seconds 1
+            $detik++
+        }
+    }
+}
+
 #=============================
 # Mengecek dan menginstall Git
 #=============================
@@ -96,23 +114,7 @@ function Install-git {
         Start-Pause
     }
 
-    if (-Not(Test-Path $git_path)) {
-        Start-Sleep -Seconds 5
-        Wait-Process choco -Timeout 240 -ErrorAction SilentlyContinue
-    }
-}
-
-function Test-git {
-    # Cek jika git sudah terinstall
-    if (-Not(Get-Command -Name git -ErrorAction Ignore)) {
-        Install-choco
-        Install-git
-    }
-    else {
-        Clear-Host
-        Write-Host ' '
-        # choco outdated
-    }
+    Wait-App(choco)
 }
 
 #==================================
