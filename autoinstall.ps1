@@ -139,7 +139,12 @@ function Start-Git_Clone_Sipd {
 
     # Melakukan git clone
     try {
-        Start-Process -FilePath $git_path -ArgumentList "clone https://github.com/agusnurwanto/sipd-chrome-extension.git $dir\$sipd"
+        if (Get-Command -Name git -ErrorAction Ignore) {
+            Start-Process powershell.exe -ArgumentList "-command git clone https://github.com/agusnurwanto/sipd-chrome-extension.git $drive\$sipd | Out-Host"
+        }
+        else {
+            Start-Process -FilePath $git_path -ArgumentList "clone https://github.com/agusnurwanto/sipd-chrome-extension.git $dir\$sipd"
+        }
         Start-Sleep -s 3
         Wait-Process git -Timeout 120 -ErrorAction SilentlyContinue
     }
