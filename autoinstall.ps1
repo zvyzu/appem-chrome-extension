@@ -80,7 +80,7 @@ function Install-git {
     try {
         # Nama package official Git adalah "git.install" bukan "git"
         if (Test-Path "$ENV:ProgramData\chocolatey\choco.exe") {
-            Start-Process -FilePath "$ENV:ProgramData\chocolatey\choco.exe" -ArgumentList "install git.install --yes --force"
+            Start-Process -FilePath "$ENV:ProgramData\chocolatey\choco.exe" -Verb RunAs -ArgumentList "install git.install --yes --force"
         }
         else {
             Start-Process powershell.exe -Verb RunAs -ArgumentList "-command choco install git.install --yes --force | Out-Host"
