@@ -70,7 +70,7 @@ function Install-choco {
         try {
             Start-ping
             Write-Output "Menginstall Chocolatey..."
-            Set-ExecutionPolicy Bypass -Scope Process -Force; Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+            Start-Process powershell.exe -Verb RunAs -ArgumentList "Set-ExecutionPolicy Bypass -Scope Process -Force; Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))"
             powershell choco feature enable -n allowGlobalConfirmation
         }
         catch {
