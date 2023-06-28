@@ -13,7 +13,7 @@ if (Test-Path "D:\" ) {
     $dir = "D:\$folder"
 }
 else {
-    $dir = "$env:SystemDrive\$folder"
+    $dir = "$ENV:SystemDrive\$folder"
 }
 
 # Pemanggilan git.exe dari $git_path jika pemanggilan git secara global gagal
@@ -21,7 +21,7 @@ if ([Environment]::OSVersion.Version -lt (new-object 'Version' 8,1)) { # Pengece
     Write-Host 'Silakan Upgrade / Update Windows Anda ke Windows 11 Atau Windows 10'
 }
 else {
-    $git_path = "$env:ProgramFiles\Git\cmd\git.exe"
+    $git_path = "$ENV:ProgramFiles\Git\cmd\git.exe"
 }
 
 #====================
@@ -54,7 +54,7 @@ function Start-ping { # Cek Koneksi Internet
 #=============================
 
 function Install-choco {
-    if (-Not((Get-Command -Name choco -ErrorAction Ignore | Out-Null) -and (Get-Item "$env:ChocolateyInstall\choco.exe" -ErrorAction Ignore).VersionInfo.ProductVersion)) {
+    if (-Not((Get-Command -Name choco -ErrorAction Ignore | Out-Null) -and (Get-Item "$ENV:ChocolateyInstall\choco.exe" -ErrorAction Ignore).VersionInfo.ProductVersion)) {
         Start-ping
         Write-Output "Menginstall Chocolatey..."
 
@@ -79,7 +79,12 @@ function Install-git {
     # Penginstallan Git menggunakan Chocolatey
     try {
         # Nama package official Git adalah "git.install" bukan "git"
-        Start-Process powershell.exe -Verb RunAs -ArgumentList "-command choco install git.install --yes | Out-Host" -WindowStyle Normal
+        if (Test-Path "$ENV:ProgramData\chocolatey\choco.exe") {
+            Start-Process -FilePath "$ENV:ProgramData\chocolatey\choco.exe" -ArgumentList "install git.install --yes --force"
+        }
+        else {
+            Start-Process powershell.exe -Verb RunAs -ArgumentList "-command choco install git.install --yes --force | Out-Host"
+        }
         Start-Sleep -Seconds 10
         Wait-Process choco -Timeout 240 -ErrorAction SilentlyContinue
     }
@@ -110,20 +115,20 @@ function Test-git {
 #==================================
 
 function Edit-gitconfig { # Memperbaiki masalah git unsafe.directory
-    if (Test-Path $env:USERPROFILE\.gitconfig) {
+    if (Test-Path $ENV:USERPROFILE\.gitconfig) {
         if (Test-Path "D:\" ) {
             $drive = "D:"
         }
         else {
-            $drive = "$env:SystemDrive"
+            $drive = "$ENV:SystemDrive"
         }
 
-        $git_safedir = Get-Content $env:USERPROFILE\.gitconfig | Select-String -Pattern "$drive/$folder/$sipd"
+        $git_safedir = Get-Content $ENV:USERPROFILE\.gitconfig | Select-String -Pattern "$drive/$folder/$sipd"
         if ($null -eq $git_safedir -or $git_safedir -eq '') {
             $gitconfig = @"
             directory = $drive/$folder/$sipd
 "@
-            $gitconfig | Out-File -Encoding utf8 -LiteralPath "$env:USERPROFILE\.gitconfig" -Append -Force
+            $gitconfig | Out-File -Encoding utf8 -LiteralPath "$ENV:USERPROFILE\.gitconfig" -Append -Force
             Start-Sleep -Seconds 1
         }
     }
@@ -1956,7 +1961,7 @@ var config = {
 
 function main {
     # Pengecekan Chocolatey sudah terinstall
-    if ((Get-Command -Name choco -ErrorAction Ignore) -and ($chocoVersion = (Get-Item "$env:ChocolateyInstall\choco.exe" -ErrorAction Ignore).VersionInfo.ProductVersion)) {
+    if ((Get-Command -Name choco -ErrorAction Ignore) -and ($chocoVersion = (Get-Item "$ENV:ChocolateyInstall\choco.exe" -ErrorAction Ignore).VersionInfo.ProductVersion)) {
         Write-Output "Chocolatey Versi $chocoVersion sudah terinstall"
     }
     else {
