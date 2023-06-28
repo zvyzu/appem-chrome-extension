@@ -72,8 +72,13 @@ function Install-choco {
 
         # Mengecek dijalankan sebagai Administrator
         if (-Not([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] 'Administrator')) {
-            Start-Process powershell.exe -Verb RunAs -ArgumentList "-command irm s.id/appembeta | Out-Host" -WindowStyle Normal
-            Exit
+            try {
+                Start-Process powershell.exe -Verb RunAs -ArgumentList "-command Set-ExecutionPolicy Bypass -Scope Process -Force; Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1')); powershell choco feature enable -n allowGlobalConfirmation" -WindowStyle Normal
+            }
+            catch {
+                Write-Error $_.Exception
+                Start-Pause
+            }
         }
         else {
             try {
