@@ -69,26 +69,13 @@ function Install-choco {
     if (-Not((Get-Command -Name choco -ErrorAction Ignore | Out-Null) -and (Get-Item "$env:ChocolateyInstall\choco.exe" -ErrorAction Ignore).VersionInfo.ProductVersion)) {
         Start-ping
         Write-Output "Menginstall Chocolatey..."
-
-        # Mengecek dijalankan sebagai Administrator
-        if (-Not([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] 'Administrator')) {
-            try {
-                Start-Process powershell.exe -Verb RunAs -ArgumentList "-command Set-ExecutionPolicy Bypass -Scope Process -Force; Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1')); powershell choco feature enable -n allowGlobalConfirmation" -WindowStyle Normal
-            }
-            catch {
-                Write-Error $_.Exception
-                Start-Pause
-            }
+        try {
+            Set-ExecutionPolicy Bypass -Scope Process -Force; Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+            powershell choco feature enable -n allowGlobalConfirmation
         }
-        else {
-            try {
-                Set-ExecutionPolicy Bypass -Scope Process -Force; Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
-                powershell choco feature enable -n allowGlobalConfirmation
-            }
-            catch {
-                Write-Error $_.Exception
-                Start-Pause
-            }
+        catch {
+            Write-Error $_.Exception
+            Start-Pause
         }
     }
 }
