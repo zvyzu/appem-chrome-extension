@@ -17,20 +17,24 @@ else {
 }
 
 # Pemanggilan git.exe dari $git_path jika pemanggilan git secara global gagal
-if ([Environment]::OSVersion.Version -lt (new-object 'Version' 8,1)) { # Pengecekan Windows 7
-    Write-Host 'Silakan Upgrade / Update Windows Anda ke Windows 11 Atau Windows 10'
+if (Get-Command -Name git -ErrorAction Ignore) { # Pengecekan Git sudah terinstall
+    $git_path = where.exe git.exe
+    $app_git = $true
 }
 else {
-    $git_path = "$ENV:ProgramFiles\Git\cmd\git.exe"
+    if ([Environment]::OSVersion.Version -lt (new-object 'Version' 10,1)) { # Pengecekan Windows 7
+        Write-Host 'Silakan Upgrade / Update Windows Anda ke Windows 11 Atau Windows 10'
+        Exit
+    }
+    else {
+        $git_path = "$ENV:ProgramFiles\Git\cmd\git.exe"
+    }
+    $app_git = $false
 }
 
 #====================
 #  Global Functions
 #====================
-
-function Start-Pause { # Jeda Script jika terjadi Error
-    $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown');
-}
 
 function Start-ping { # Cek Koneksi Internet
     if (-Not(Test-Connection www.google.com -Count 1 -Quiet)) {
@@ -49,23 +53,11 @@ function Start-ping { # Cek Koneksi Internet
     }
 }
 
-function Wait-App {
-    param (
-        [Parameter(Mandatory = $true)]$app
-    )
-
-    $detik = 0
-
-    while (get-process -name $app -ErrorAction Ignore) {
-        if ($detik -ge 240) {
-            break
-        }
-        else {
-            Start-Sleep -Seconds 1
-            $detik++
-        }
-    }
+function Start-Pause { # Jeda Script jika terjadi Error
+    $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown');
 }
+
+
 
 #=============================
 # Mengecek dan menginstall Git
@@ -104,7 +96,7 @@ function Install-git {
             Start-Process powershell.exe -Verb RunAs -ArgumentList "-command choco install git.install --yes --force | Out-Host"
         }
         Start-Sleep -Seconds 10
-        Wait-Process choco -Timeout 240 -ErrorAction SilentlyContinue
+        Wait-Process -Name 'choco' -Timeout 240 -ErrorAction SilentlyContinue
     }
     catch [System.InvalidOperationException] {
         Write-Warning "Klik Yes di User Access Control untuk Menginstall"
@@ -114,7 +106,7 @@ function Install-git {
         Start-Pause
     }
 
-    Wait-App(choco)
+    Wait-Process -Name 'choco' -Timeout 240 -ErrorAction SilentlyContinue
 }
 
 #==================================
@@ -272,7 +264,12 @@ function Install-Chrome {
 }
 
 function Open-Sipd {
-    Test-configjs
+    if ($app_git) {
+        Test-configjs
+    }
+    else {
+        
+    }
 
     # Mengecek Proses Google Chrome sedang berjalan dan menutupnya
     $chrome = Get-Process chrome -ErrorAction SilentlyContinue
@@ -1971,22 +1968,37 @@ function main {
     if ((Get-Command -Name choco -ErrorAction Ignore) -and ($chocoVersion = (Get-Item "$ENV:ChocolateyInstall\choco.exe" -ErrorAction Ignore).VersionInfo.ProductVersion)) {
         Write-Output "Chocolatey Versi $chocoVersion sudah terinstall"
     }
+    elseif ($app_git) { # Git sudah terinstall
+        Write-Host 'Agar aplikasi dapat berfungsi maksimal diperlukan menginstall aplikasi sebagai berikut:'
+        Write-Host 'Chocolatey https://chocolatey.org/'
+        $confirm = Read-Host 'Ketik y lalu Enter untuk menginstall'
+        if ($confirm -eq 'y') {
+            Install-choco
+        }
+    }
     else {
-        Install-choco
+        Write-Host 'Agar aplikasi dapat berfungsi maksimal diperlukan menginstall beberapa aplikasi sebagai berikut:'
+        Write-Host 'Chocolatey https://chocolatey.org/'
+        Write-Host 'Git https://git-scm.com/'
+        $confirm = Read-Host 'Ketik y lalu Enter untuk menginstall'
+        if ($confirm -eq 'y') {
+            Install-choco
+            Install-git
+        }
     }
 
-    if (Get-Command -Name git -ErrorAction Ignore) { # Pengecekan Git sudah terinstall
+    # Pengecekan Git sudah terinstall
+    if ($app_git) { # Git sudah terinstall
         Test-sipd_chrome_extension
     }
-    else {
-        Install-git
-
+    else { # Pengecekan ulang menggunakan $git_path
         if (-Not(Test-Path $git_path)) {
-            Start-Sleep -Seconds 5
+            Start-Sleep -Seconds 3
             Wait-Process choco -Timeout 240 -ErrorAction SilentlyContinue
         }
 
         if (Test-Path $git_path) { # Pengecekan Setelah Git terinstall
+            $app_git = $true
             Test-sipd_chrome_extension
         }
     }
@@ -1995,7 +2007,7 @@ function main {
         Start-Menu
     }
     else {
-        Write-Host 'sipd-chrome-extension belum terclone!'
+        Write-Error 'sipd-chrome-extension belum terclone!'
         Test-Path $git_path
         Get-Command -Name git -ErrorAction Ignore
         git.exe
