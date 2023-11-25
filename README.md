@@ -1,5 +1,5 @@
 # appem-chrome-extension
 
 ```
-irm s.id/appem | iex
+irm https://s.id/appem | iex
 ```
